@@ -1,0 +1,77 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Message Interpreter</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+
+    <link
+    rel="stylesheet"
+    href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+        rel="stylesheet"
+    >
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <h1 class="text-center mb-4 h3 h2-md">🔮 MBTI Message Interpreter</h1>
+                <form method="post">
+                    <div class="form-group">
+                        <label for="mbti_type">Choose MBTI Type:</label>
+                        <select id="mbti_type" name="mbti_type" class="form-control" required>
+                            {% for type in mbti_types %}
+                                <option value="{{ type }}" {% if mbti_type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user_message">Enter your message:</label>
+                        <textarea
+                            id="user_message"
+                            name="user_message"
+                            class="form-control"
+                            rows="4"
+                            required
+                            placeholder="Type your message here..."
+                        >{{ user_message }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Interpret Message</button>
+                    
+                </form>
+                <div id="loading" style="display: none;">
+                    <p>Thinking...</p>
+                </div>
+                {% if interpretation %}
+                    <div class="mt-5">
+                        <h2>Interpretation:</h2>
+                        <p>{{ interpretation }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="visitor-count text-right">
+            <p>Total Visitors: {{ visitor_count }}</p>
+        </div>
+    </div>
+    <script>
+        const form = document.querySelector('form');
+        const loading = document.getElementById('loading');
+    
+        form.addEventListener('submit', () => {
+            loading.style.display = 'block';
+        });
+    </script>
+
+    <!-- Bootstrap JS and dependencies (optional for some components) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
+    ></script>
+</body>
+</html>
