@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from openai import OpenAI
 import os
 import re
@@ -8,8 +8,10 @@ app = Flask(__name__)
 
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
+app.secret_key = '7WG20yg6YU/oZdObHCeDR4dq900fyuV9U7q2n6momCE='
 
 COUNTER_FILE = 'counter.txt'
+UNIQUE_COUNTER_FILE = 'unique_counter.txt'
 INTERPRETER_CLICKS_FILE = 'interpreter_clicks.txt'
 TRANSLATOR_CLICKS_FILE = 'translator_clicks.txt'
 GUESSER_CLICKS_FILE = 'guesser_clicks.txt'
@@ -45,6 +47,15 @@ def index():
     visitor_count = read_count(COUNTER_FILE)
     visitor_count += 1
     write_count(COUNTER_FILE, visitor_count)
+
+    # Read the visitor count
+    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
+
+    # Check if the user has been counted in this session
+    if not session.get('interpreter_visited'):
+        unique_visitor_count += 1
+        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
+        session['interpreter_visited'] = True
 
     # Read the interpreter click count
     interpreter_clicks = read_count(INTERPRETER_CLICKS_FILE)
@@ -89,6 +100,7 @@ def index():
             user_message=user_message,
             mbti_types=MBTI_TYPES,
             visitor_count=visitor_count,
+            unique_visitor_count=unique_visitor_count,
             interpreter_clicks=interpreter_clicks
         )
     else:
@@ -99,6 +111,7 @@ def index():
             user_message='',
             interpretation=None,
             mbti_types=MBTI_TYPES,
+            unique_visitor_count=unique_visitor_count,
             visitor_count=visitor_count,
             interpreter_clicks=interpreter_clicks
         )
@@ -112,6 +125,15 @@ def translator():
     visitor_count = read_count(COUNTER_FILE)
     visitor_count += 1
     write_count(COUNTER_FILE, visitor_count)
+
+    # Read the visitor count
+    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
+
+    # Check if the user has been counted in this session
+    if not session.get('interpreter_visited'):
+        unique_visitor_count += 1
+        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
+        session['interpreter_visited'] = True
 
     # Read the translator click count
     translator_clicks = read_count(TRANSLATOR_CLICKS_FILE)
@@ -178,6 +200,7 @@ def translator():
             interpretation=interpretation,
             mbti_types=MBTI_TYPES,
             visitor_count=visitor_count,
+            unique_visitor_count=unique_visitor_count,
             translator_clicks=translator_clicks
         )
     else:
@@ -190,6 +213,7 @@ def translator():
             interpretation='',
             mbti_types=MBTI_TYPES,
             visitor_count=visitor_count,
+            unique_visitor_count=unique_visitor_count,
             translator_clicks=translator_clicks
         )
 
@@ -200,6 +224,15 @@ def guesser():
     visitor_count = read_count(COUNTER_FILE)
     visitor_count += 1
     write_count(COUNTER_FILE, visitor_count)
+
+    # Read the visitor count
+    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
+
+    # Check if the user has been counted in this session
+    if not session.get('interpreter_visited'):
+        unique_visitor_count += 1
+        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
+        session['interpreter_visited'] = True
 
     # Read the guesser click count
     guesser_clicks = read_count(GUESSER_CLICKS_FILE)
@@ -265,6 +298,7 @@ def guesser():
             message=message,
             output=parsed_output or raw_output,
             visitor_count=visitor_count,
+            unique_visitor_count=unique_visitor_count,
             guesser_clicks=guesser_clicks
         )
     else:
@@ -273,6 +307,7 @@ def guesser():
             message='',
             output='',
             visitor_count=visitor_count,
+            unique_visitor_count=unique_visitor_count,
             guesser_clicks=guesser_clicks
         )
 
