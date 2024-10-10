@@ -12,7 +12,7 @@
     />
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon2.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon2.png') }}" type="image/x-icon">
 </head>
 <body>
     <div class="container mt-5">
@@ -66,26 +66,12 @@
             </div>
         </form>
         {% if output %}
-            {% if output is iterable %}
-                <!-- Display parsed output as before -->
-                <div class="mt-5">
-                    <h2>Predicted MBTI Type(s):</h2>
-                    <ul class="list-group">
-                        {% for item in output %}
-                            <li class="list-group-item">
-                                <h5>{{ item.rank }}. {{ item.mbti_type }} - {{ item.probability }}%</h5>
-                                <p>{{ item.reasoning }}</p>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% else %}
-                <!-- Display raw output -->
-                <div class="mt-5">
-                    <h2>Predicted MBTI Type(s):</h2>
-                    <p>{{ output }}</p>
-                </div>
-            {% endif %}
+            {% for item in output %}
+                <p>{{ item.rank }}. {{ item.mbti_type }} - {{ item.probability }}%</p>
+                <p>Reasoning: {{ item.reasoning }}</p>
+            {% endfor %}
+        {% else %}
+            <p>{{ raw_output }}</p>
         {% endif %}
         <p>creator email: assistant.count@aiflowmail.com</p>
     </div>

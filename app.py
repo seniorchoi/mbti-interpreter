@@ -85,7 +85,7 @@ def index():
             response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=300,
+            max_tokens=150,
             n=1,
             stop=None,
             temperature=0.7)
@@ -170,7 +170,7 @@ def translator():
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                max_tokens=300,
+                max_tokens=150,
                 n=1,
                 temperature=0.7,
             )
@@ -248,11 +248,12 @@ def guesser():
         prompt = (
             f"Analyze the following message and guess the most likely Myers-Briggs personality type(s) of the person who wrote it. "
             f"Provide the top three most likely MBTI types with their respective probabilities in percentages. "
-            f"Go above 85~97% in all your probability predictions, but do not return 2 types with same percentage numbers."
+            f"Ensure that all probability predictions are unique and between 85% and 97%. "
+            f"Do not include any additional text or headings before the numbered list."
             f"Explain your reasoning for each type.\n\n"
             f"Message: \"{message}\"\n\n"
             f"Be very confident and assertive in your predictions."
-            f"Format your response as:\n"
+            f"Format your response exactly as:\n"
             f"1. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
             f"2. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
             f"3. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]"
@@ -265,18 +266,18 @@ def guesser():
                 "content": prompt
             }
         ]
-
+        raw_output = None
         try:
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                max_tokens=300,
+                max_tokens=200,
                 n=1,
                 temperature=0.7,
             )
             raw_output = response.choices[0].message.content
             # Parse the output
-            pattern = r'(\d+)\.\s*(\w{4})\s*-\s*(\d+)%\s*Reasoning:\s*(.*?)\s*(?=\d+\.|$)'
+            pattern = r'(\d+)\.\s*(\w{4})\s*-\s*(\d{1,3})%\s*Reasoning:\s*(.*?)(?=\n\d+\.|$)'
             matches = re.findall(pattern, raw_output, re.DOTALL)
             parsed_output = []
             for match in matches:
@@ -291,7 +292,16 @@ def guesser():
         except Exception as e:
             print(f"Error: {e}")
             parsed_output = None
-            raw_output = raw_output  # Use the raw output
+            raw_output = "An error occurred while processing the AI response."
+        
+        if not parsed_output:
+            # Fallback to raw_output or display an error message
+            parsed_output = None
+            if raw_output:
+                # Optionally display the raw AI output
+                pass
+            else:
+                raw_output = "Unable to parse the AI response."
 
         return render_template(
             'guesser.html',
