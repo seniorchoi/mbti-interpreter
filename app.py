@@ -1,8 +1,8 @@
-    # app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from openai import OpenAI
 import os
-
+import re
+import uuid
 
 app = Flask(__name__)
 
@@ -10,6 +10,25 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 
 COUNTER_FILE = 'counter.txt'
+INTERPRETER_CLICKS_FILE = 'interpreter_clicks.txt'
+TRANSLATOR_CLICKS_FILE = 'translator_clicks.txt'
+GUESSER_CLICKS_FILE = 'guesser_clicks.txt'
+
+
+def read_count(file_name):
+    if os.path.exists(file_name):
+        with open(file_name, 'r') as f:
+            count = f.read()
+            if count:
+                return int(count)
+            else:
+                return 0
+    else:
+        return 0
+
+def write_count(file_name, count):
+    with open(file_name, 'w') as f:
+        f.write(str(count))
 
 
 MBTI_TYPES = [
@@ -20,29 +39,21 @@ MBTI_TYPES = [
 ]
 
 
-def read_visitor_count():
-    if os.path.exists(COUNTER_FILE):
-        with open(COUNTER_FILE, 'r') as f:
-            count = f.read()
-            if count:
-                return int(count)
-            else:
-                return 0
-    else:
-        return 0
-
-def write_visitor_count(count):
-    with open(COUNTER_FILE, 'w') as f:
-        f.write(str(count))
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    visitor_count = read_visitor_count()
+    # Read and update the visitor count
+    visitor_count = read_count(COUNTER_FILE)
     visitor_count += 1
-    write_visitor_count(visitor_count)
+    write_count(COUNTER_FILE, visitor_count)
+
+    # Read the interpreter click count
+    interpreter_clicks = read_count(INTERPRETER_CLICKS_FILE)
 
     if request.method == 'POST':
+        # Increment the interpreter click count
+        interpreter_clicks += 1
+        write_count(INTERPRETER_CLICKS_FILE, interpreter_clicks)
+
         mbti_type = request.form['mbti_type']
         user_message = request.form['user_message']
         prompt = (
@@ -76,20 +87,195 @@ def index():
             interpretation=interpretation,
             mbti_type=mbti_type,
             user_message=user_message,
-            mbti_types=MBTI_TYPES
+            mbti_types=MBTI_TYPES,
+            visitor_count=visitor_count,
+            interpreter_clicks=interpreter_clicks
         )
     else:
         # Default values for GET request
         return render_template(
             'index.html',
-            visitor_count=visitor_count,
             mbti_type='INTJ',
             user_message='',
             interpretation=None,
-            mbti_types=MBTI_TYPES
+            mbti_types=MBTI_TYPES,
+            visitor_count=visitor_count,
+            interpreter_clicks=interpreter_clicks
         )
 
     return render_template('index.html')
 
+
+@app.route('/translator', methods=['GET', 'POST'])
+def translator():
+    # Read and update the visitor count
+    visitor_count = read_count(COUNTER_FILE)
+    visitor_count += 1
+    write_count(COUNTER_FILE, visitor_count)
+
+    # Read the translator click count
+    translator_clicks = read_count(TRANSLATOR_CLICKS_FILE)
+
+    if request.method == 'POST':
+        # Increment the translator click count
+        translator_clicks += 1
+        write_count(TRANSLATOR_CLICKS_FILE, translator_clicks)
+
+        from_mbti = request.form['from_mbti']
+        to_mbti = request.form['to_mbti']
+        original_message = request.form['original_message']
+
+        # Create the prompt for the AI
+        prompt = (
+            f"Please translate the following message from an {from_mbti} perspective to one "
+            f"that an {to_mbti} would easily understand.\n"
+            f"Then, provide an interpretation of the original message.\n\n"
+            f"Original Message: \"{original_message}\"\n\n"
+            f"Response format:\n"
+            f"Translated Message:\n[Translated message here]\n\n"
+            f"Interpretation:\n[Interpretation here]\n"
+        )
+
+        messages=[
+            {"role": "system", "content": "You are an mbti expert."},
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                max_tokens=300,
+                n=1,
+                temperature=0.7,
+            )
+
+            # Assuming the AI provides the translation and interpretation separated by a delimiter
+            output = response.choices[0].message.content.strip()
+            # You may need to parse the output appropriately
+            # For simplicity, let's assume the AI returns:
+            # "Translated Message: ... Interpretation: ..."
+            if "Interpretation:" in output:
+                translated_message, interpretation = output.split("Interpretation:")
+                translated_message = translated_message.replace("Translated Message:", "").strip()
+                interpretation = interpretation.strip()
+            else:
+                translated_message = output
+                interpretation = ""
+        except Exception as e:
+            translated_message = ""
+            interpretation = "Sorry, an error occurred while processing your request."
+
+        return render_template(
+            'translator.html',
+            from_mbti=from_mbti,
+            to_mbti=to_mbti,
+            original_message=original_message,
+            translated_message=translated_message,
+            interpretation=interpretation,
+            mbti_types=MBTI_TYPES,
+            visitor_count=visitor_count,
+            translator_clicks=translator_clicks
+        )
+    else:
+        return render_template(
+            'translator.html',
+            from_mbti='INTJ',
+            to_mbti='INFP',
+            original_message='',
+            translated_message='',
+            interpretation='',
+            mbti_types=MBTI_TYPES,
+            visitor_count=visitor_count,
+            translator_clicks=translator_clicks
+        )
+
+
+@app.route('/guesser', methods=['GET', 'POST'])
+def guesser():
+    # Read and update the visitor count
+    visitor_count = read_count(COUNTER_FILE)
+    visitor_count += 1
+    write_count(COUNTER_FILE, visitor_count)
+
+    # Read the guesser click count
+    guesser_clicks = read_count(GUESSER_CLICKS_FILE)
+
+    if request.method == 'POST':
+        # Increment the guesser click count
+        guesser_clicks += 1
+        write_count(GUESSER_CLICKS_FILE, guesser_clicks)
+
+        message = request.form['message']
+
+        # Create the prompt for the AI
+        prompt = (
+            f"Analyze the following message and guess the most likely Myers-Briggs personality type(s) of the person who wrote it. "
+            f"Provide the top three most likely MBTI types with their respective probabilities in percentages. "
+            f"Go above 85~97% in all your probability predictions, but do not return 2 types with same percentage numbers."
+            f"Explain your reasoning for each type.\n\n"
+            f"Message: \"{message}\"\n\n"
+            f"Be very confident and assertive in your predictions."
+            f"Format your response as:\n"
+            f"1. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
+            f"2. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
+            f"3. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]"
+        )
+
+        messages=[
+            {"role": "system", "content": "You are an mbti expert."},
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                max_tokens=300,
+                n=1,
+                temperature=0.7,
+            )
+            raw_output = response.choices[0].message.content
+            # Parse the output
+            pattern = r'(\d+)\.\s*(\w{4})\s*-\s*(\d+)%\s*Reasoning:\s*(.*?)\s*(?=\d+\.|$)'
+            matches = re.findall(pattern, raw_output, re.DOTALL)
+            parsed_output = []
+            for match in matches:
+                rank, mbti_type, probability, reasoning = match
+                parsed_output.append({
+                    'rank': int(rank),
+                    'mbti_type': mbti_type,
+                    'probability': int(probability),
+                    'reasoning': reasoning.strip()
+                })
+            # Process the AI's output as needed
+        except Exception as e:
+            print(f"Error: {e}")
+            parsed_output = None
+            raw_output = raw_output  # Use the raw output
+
+        return render_template(
+            'guesser.html',
+            message=message,
+            output=parsed_output or raw_output,
+            visitor_count=visitor_count,
+            guesser_clicks=guesser_clicks
+        )
+    else:
+        return render_template(
+            'guesser.html',
+            message='',
+            output='',
+            visitor_count=visitor_count,
+            guesser_clicks=guesser_clicks
+        )
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

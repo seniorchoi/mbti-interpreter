@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MBTI Message Interpreter</title>
-    <!-- Meta Tags and CSS Links -->
+    <title>MBTI Translator</title>
+    <!-- Meta Tags for Responsive Design -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Bootstrap CSS -->
     <link
         rel="stylesheet"
@@ -40,33 +40,58 @@
         <div class="visitor-count text-right">
             <p>Total Visitors: {{ visitor_count }}</p>
         </div>
+        <!-- Click Count Display -->
         <div class="click-count text-right">
-            <p>Total Interpretations: {{ interpreter_clicks }}</p>
+            <p>Total Translations: {{ translator_clicks }}</p>
         </div>
-        <h1 class="text-center mb-4">MBTI Message Interpreter</h1>
-        <form method="post" id="interpreter-form">
-            <!-- Form Fields -->
-            <div class="form-group">
-                <label for="mbti_type">Choose MBTI Type:</label>
-                <select id="mbti_type" name="mbti_type" class="form-control" required>
-                    {% for type in mbti_types %}
-                        <option value="{{ type }}" {% if mbti_type == type %}selected{% endif %}>{{ type }}</option>
-                    {% endfor %}
-                </select>
+        <h1 class="text-center mb-4">MBTI Translator</h1>
+        <form method="post" id="translator-form">
+            <div class="row">
+                <!-- From MBTI Type and Original Message -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="from_mbti">From:</label>
+                        <select id="from_mbti" name="from_mbti" class="form-control" required>
+                            {% for type in mbti_types %}
+                                <option value="{{ type }}" {% if from_mbti == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea
+                            id="original_message"
+                            name="original_message"
+                            class="form-control"
+                            rows="10"
+                            required
+                            placeholder="Type your message here..."
+                        >{{ original_message }}</textarea>
+                    </div>
+                </div>
+                <!-- To MBTI Type and Translated Message -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="to_mbti">To:</label>
+                        <select id="to_mbti" name="to_mbti" class="form-control" required>
+                            {% for type in mbti_types %}
+                                <option value="{{ type }}" {% if to_mbti == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea
+                            id="translated_message"
+                            name="translated_message"
+                            class="form-control"
+                            rows="10"
+                            readonly
+                        >{{ translated_message }}</textarea>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="user_message">Enter your message:</label>
-                <textarea
-                    id="user_message"
-                    name="user_message"
-                    class="form-control"
-                    rows="4"
-                    required
-                    placeholder="Type your message here..."
-                >{{ user_message }}</textarea>
-            </div>
+            <!-- Submit Button -->
             <div class="text-center">
-                <button type="submit" class="btn btn-primary">Interpret Message</button>
+                <button type="submit" class="btn btn-primary">Translate</button>
                 <span id="loading-message" class="loading-message ml-2" style="display: none;">
                     <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
                     Thinking...
@@ -87,9 +112,11 @@
         src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
     ></script>
 
-    <!-- Loading Indicator Script -->
     <script>
-        const form = document.getElementById('interpreter-form');
+        // Existing JavaScript (if any)
+        // ...
+
+        const form = document.getElementById('translator-form');
         const loadingMessage = document.getElementById('loading-message');
 
         form.addEventListener('submit', function() {
