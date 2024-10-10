@@ -127,3 +127,10 @@ textarea {
     color: #555;
     vertical-align: middle;
 }
+.navbar-nav .nav-link {
+    font-size: 18px; /* Adjust this value as needed */
+}
+
+.navbar-brand {
+    font-size: 28px; /* Adjust this value as needed */
+}

@@ -12,6 +12,7 @@
     />
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon2.ico') }}" type="image/x-icon">
 </head>
 <body>
     <div class="container mt-5">
@@ -43,7 +44,7 @@
         <div class="click-count text-right">
             <p>Total Interpretations: {{ interpreter_clicks }}</p>
         </div>
-        <h1 class="text-center mb-4">MBTI Message Interpreter</h1>
+        <h1 class="text-center mb-4">MBTI Interpreter</h1>
         <form method="post" id="interpreter-form">
             <!-- Form Fields -->
             <div class="form-group">
