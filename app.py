@@ -11,10 +11,6 @@ load_dotenv()
 
 app = Flask(__name__)
 
-client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-
-app.secret_key = 'SECRET_KEY'
-
 # Retrieve the DATABASE_URL environment variable
 db_url = os.environ.get('DATABASE_URL')
 
@@ -27,6 +23,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+
+client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+
+app.secret_key = 'SECRET_KEY'
 
 
 from models import Visitor, UniqueVisitor, ClickCount
