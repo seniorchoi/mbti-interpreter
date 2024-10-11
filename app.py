@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from openai import OpenAI
 import os
 import re
@@ -6,6 +6,8 @@ import uuid
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask_migrate import Migrate
+from functools import wraps
+
 
 load_dotenv()
 
@@ -30,7 +32,7 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 app.secret_key = 'SECRET_KEY'
 
 
-from models import Visitor, UniqueVisitor, ClickCount
+from models import Visitor, UniqueVisitor, ClickCount, UserEmail
 
 @app.before_request
 def initialize_counts():
@@ -58,7 +60,40 @@ MBTI_TYPES = [
 ]
 
 
+def email_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('email_provided'):
+            return redirect(url_for('enter_email'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+#ROUTES
+
+# Route to display the email form
+@app.route('/enter_email', methods=['GET'])
+def enter_email():
+    return render_template('email_form.html')
+
+# Route to handle form submission
+@app.route('/submit_email', methods=['POST'])
+def submit_email():
+    email = request.form.get('email')
+    if email:
+        # Check if email already exists
+        existing_email = UserEmail.query.filter_by(email=email).first()
+        if not existing_email:
+            new_email = UserEmail(email=email)
+            db.session.add(new_email)
+            db.session.commit()
+        # Set a session variable to indicate email has been provided
+        session['email_provided'] = True
+        return redirect(url_for('index'))
+    else:
+        return redirect(url_for('enter_email'))
+
 @app.route('/', methods=['GET', 'POST'])
+@email_required
 def index():
     # Increment total visitors
     visitor = Visitor.query.first()
@@ -135,6 +170,7 @@ def index():
 
 
 @app.route('/translator', methods=['GET', 'POST'])
+@email_required
 def translator():
     # Increment total visitors
     visitor = Visitor.query.first()
@@ -231,6 +267,7 @@ def translator():
 
 
 @app.route('/guesser', methods=['GET', 'POST'])
+@email_required
 def guesser():
     # Increment total visitors
     visitor = Visitor.query.first()

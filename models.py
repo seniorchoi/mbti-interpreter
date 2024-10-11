@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Visitor(db.Model):
     __tablename__ = 'visitor'
@@ -15,3 +16,9 @@ class ClickCount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     feature = db.Column(db.String(50), unique=True, nullable=False)
     count = db.Column(db.Integer, default=0)
+
+class UserEmail(db.Model):
+    __tablename__ = 'user_email'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
