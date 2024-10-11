@@ -15,6 +15,13 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 app.secret_key = '7WG20yg6YU/oZdObHCeDR4dq900fyuV9U7q2n6momCE='
 
+# Retrieve the DATABASE_URL environment variable
+db_url = os.environ.get('DATABASE_URL')
+
+# Replace 'postgres://' with 'postgresql://' if necessary
+if db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
