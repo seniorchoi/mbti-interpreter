@@ -1,2 +1,8 @@
 # .gitignore
 .env
+
+venv/
+__pycache__/
+*.pyc
+.env
+init_db.py
