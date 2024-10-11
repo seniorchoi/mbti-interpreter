@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
-app.secret_key = '7WG20yg6YU/oZdObHCeDR4dq900fyuV9U7q2n6momCE='
+app.secret_key = 'SECRET_KEY'
 
 # Retrieve the DATABASE_URL environment variable
 db_url = os.environ.get('DATABASE_URL')
