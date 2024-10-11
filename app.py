@@ -30,7 +30,7 @@ migrate = Migrate(app, db)
 
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
-app.secret_key = 'SECRET_KEY'
+app.secret_key = os.environ.get('SECRET_KEY')
 
 logging.basicConfig(level=logging.INFO)
 
