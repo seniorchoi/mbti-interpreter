@@ -134,7 +134,7 @@ def index():
             response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            max_tokens=150,
+            max_tokens=300,
             n=1,
             stop=None,
             temperature=0.7)
@@ -217,7 +217,7 @@ def translator():
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                max_tokens=150,
+                max_tokens=300,
                 n=1,
                 temperature=0.7,
             )
@@ -315,7 +315,7 @@ def guesser():
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
-                max_tokens=200,
+                max_tokens=300,
                 n=1,
                 temperature=0.7,
             )
