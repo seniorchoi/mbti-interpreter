@@ -29,19 +29,7 @@ db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
-class Visitor(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    total_visitors = db.Column(db.Integer, default=0)
-
-class UniqueVisitor(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    unique_visitors = db.Column(db.Integer, default=0)
-
-class ClickCount(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    feature = db.Column(db.String(50), unique=True, nullable=False)
-    count = db.Column(db.Integer, default=0)
-
+from models import Visitor, UniqueVisitor, ClickCount
 
 @app.before_request
 def initialize_counts():
