@@ -59,6 +59,9 @@ MBTI_TYPES = [
     "ISTP", "ISFP", "ESTP", "ESFP"
 ]
 
+@app.context_processor
+def inject_session():
+    return dict(session=session)
 
 def email_required(f):
     @wraps(f)
@@ -90,10 +93,9 @@ def submit_email():
         session['email_provided'] = True
         return redirect(url_for('index'))
     else:
-        return redirect(url_for('enter_email'))
+        return redirect(url_for('index'))
 
 @app.route('/', methods=['GET', 'POST'])
-@email_required
 def index():
     # Increment total visitors
     visitor = Visitor.query.first()
@@ -170,7 +172,6 @@ def index():
 
 
 @app.route('/translator', methods=['GET', 'POST'])
-@email_required
 def translator():
     # Increment total visitors
     visitor = Visitor.query.first()
@@ -267,7 +268,6 @@ def translator():
 
 
 @app.route('/guesser', methods=['GET', 'POST'])
-@email_required
 def guesser():
     # Increment total visitors
     visitor = Visitor.query.first()

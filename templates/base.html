@@ -1,0 +1,124 @@
+<!-- File: /mbti-interpreter/templates/base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MBTI Oracle{% endblock %}</title>
+    {% block head %}{% endblock %}
+    <style>
+        /* Modal styling */
+        .modal {
+        display: none; /* Hidden by default */
+        position: fixed;
+        z-index: 1000; /* Ensure it's on top */
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Prevent scrolling */
+        background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto; /* 10% from top, centered horizontally */
+            padding: 20px;
+            border: none;
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 400px;
+            border-radius: 8px;
+            position: relative;
+            animation: fadeIn 0.5s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Input styling */
+        input[type=email], input[type=submit] {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[type=email]:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        input[type=submit] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        input[type=submit]:hover {
+            background-color: #45a049;
+        }
+
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        /* Modal heading */
+        .modal-content h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #333;
+        }
+
+        /* Additional styling */
+        .modal-content p {
+            text-align: center;
+            color: #666;
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 600px) {
+            .modal-content {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <h2>Please Enter Your Email to Continue</h2>
+            <p>We value your privacy and won't share your email.</p>
+            <form method="POST" action="{{ url_for('submit_email') }}">
+                <input type="email" name="email" placeholder="Enter your email address" required>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript to handle the modal -->
+    <script>
+        // Function to check if email has been provided
+        function emailProvided() {
+            return {{ 'true' if session.get('email_provided') else 'false' }};
+        }
+
+        // Show the modal after 20 seconds if email not provided
+        window.onload = function() {
+            if (!emailProvided()) {
+                setTimeout(function() {
+                    document.getElementById('emailModal').style.display = 'block';
+                }, 2000); // 20000 milliseconds = 20 seconds
+            }
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

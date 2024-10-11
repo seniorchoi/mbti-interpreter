@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MBTI Oracle</title>
-    <!-- Meta Tags for Responsive Design -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- File: /mbti-interpreter/templates/translator.html -->
 
+{% extends "base.html" %}
+
+{% block title %}MBTI Oracle - Translator{% endblock %}
+
+{% block head %}
+    <!-- Meta Tags and CSS Links -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap CSS -->
     <link
         rel="stylesheet"
@@ -13,9 +15,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon2.png') }}" type="image/x-icon">
-    <script id="mcjs">!function(c,h,i,m,p){m=c.createElement(h),p=c.getElementsByTagName(h)[0],m.async=1,m.src=i,p.parentNode.insertBefore(m,p)}(document,"script","https://chimpstatic.com/mcjs-connected/js/users/009c8068eabdc8bc5ab542ab1/d4c3ca86b62e2fcd44e06b8fb.js");</script>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="container mt-5">
         <!-- Navigation Bar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -26,13 +28,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
-                    <li class="nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
                     </li>
-                    <li class="nav-item {% if request.endpoint == 'translator' %}active{% endif %}">
+                    <li class="nav-item active">
                         <a class="nav-link" href="{{ url_for('translator') }}">Translator</a>
                     </li>
-                    <li class="nav-item {% if request.endpoint == 'guesser' %}active{% endif %}">
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
                     </li>
                 </ul>
@@ -107,24 +109,22 @@
             </div>
         {% endif %}
     </div>
+{% endblock %}
 
-    <!-- Bootstrap JS and dependencies -->
+{% block scripts %}
+    <!-- Include JavaScript files -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
     ></script>
 
     <script>
-        // Existing JavaScript (if any)
-        // ...
-
         const form = document.getElementById('translator-form');
         const loadingMessage = document.getElementById('loading-message');
 
         form.addEventListener('submit', function() {
             loadingMessage.style.display = 'inline-block';
         });
-        console.log('unique Visitors: {{unique_visitor_count}}');
+        console.log('Unique Visitors: {{ unique_visitor_count }}');
     </script>
-</body>
-</html>
+{% endblock %}

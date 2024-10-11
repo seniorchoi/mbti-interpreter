@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MBTI Oracle</title>
-    <!-- Meta Tags for Responsive Design -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- File: /mbti-interpreter/templates/guesser.html -->
 
+{% extends "base.html" %}
+
+{% block title %}MBTI Oracle - Guesser{% endblock %}
+
+{% block head %}
+    <!-- Meta Tags and CSS Links -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Bootstrap CSS -->
     <link
         rel="stylesheet"
@@ -13,9 +15,9 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon2.png') }}" type="image/x-icon">
-    <script id="mcjs">!function(c,h,i,m,p){m=c.createElement(h),p=c.getElementsByTagName(h)[0],m.async=1,m.src=i,p.parentNode.insertBefore(m,p)}(document,"script","https://chimpstatic.com/mcjs-connected/js/users/009c8068eabdc8bc5ab542ab1/d4c3ca86b62e2fcd44e06b8fb.js");</script>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <div class="container mt-5">
         <!-- Navigation Bar -->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -67,22 +69,30 @@
             </div>
         </form>
         {% if output %}
-            {% for item in output %}
-                <p>{{ item.rank }}. {{ item.mbti_type }} - {{ item.probability }}%</p>
-                <p>Reasoning: {{ item.reasoning }}</p>
-            {% endfor %}
-        {% else %}
-            <p>{{ raw_output }}</p>
+            {% if output is iterable and output[0] is mapping %}
+                {% for item in output %}
+                    <div class="mt-4">
+                        <h4>{{ item.rank }}. {{ item.mbti_type }} - {{ item.probability }}%</h4>
+                        <p><strong>Reasoning:</strong> {{ item.reasoning }}</p>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="mt-5">
+                    <h2>Result:</h2>
+                    <p>{{ output }}</p>
+                </div>
+            {% endif %}
         {% endif %}
-        <p>creator email: assistant.count@aiflowmail.com</p>
     </div>
-    
+{% endblock %}
 
-    <!-- Bootstrap JS and dependencies -->
+{% block scripts %}
+    <!-- Include JavaScript files -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
     ></script>
+
     <script>
         const form = document.getElementById('guesser-form');
         const loadingMessage = document.getElementById('loading-message');
@@ -90,7 +100,6 @@
         form.addEventListener('submit', function() {
             loadingMessage.style.display = 'inline-block';
         });
-        console.log('unique Visitors: {{unique_visitor_count}}');
+        console.log('Unique Visitors: {{ unique_visitor_count }}');
     </script>
-</body>
-</html>
+{% endblock %}
