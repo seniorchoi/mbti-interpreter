@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from functools import wraps
+import logging
 
 
 load_dotenv()
@@ -30,6 +31,8 @@ migrate = Migrate(app, db)
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 app.secret_key = 'SECRET_KEY'
+
+logging.basicConfig(level=logging.INFO)
 
 
 from models import Visitor, UniqueVisitor, ClickCount, UserEmail
@@ -140,8 +143,13 @@ def index():
             temperature=0.7)
 
             interpretation = response.choices[0].message.content.strip()
+
+            # Add logging here
+            logging.info(f"Interpreter Input: MBTI Type: {mbti_type}, User Message: {user_message}")
+            logging.info(f"Interpreter Output: {interpretation}")
         except Exception as e:
             interpretation = "Sorry, an error occurred while processing your request."
+            logging.error(f"Error in Interpreter: {e}")
 
         db.session.commit()
 
@@ -225,6 +233,10 @@ def translator():
             # Assuming the AI provides the translation and interpretation separated by a delimiter
             output = response.choices[0].message.content.strip()
             # You may need to parse the output appropriately
+
+            # Add logging here
+            logging.info(f"Translator Input: From MBTI: {from_mbti}, To MBTI: {to_mbti}, Original Message: {original_message}")
+            logging.info(f"Translator Output: {output}")
             # For simplicity, let's assume the AI returns:
             # "Translated Message: ... Interpretation: ..."
             if "Interpretation:" in output:
@@ -237,6 +249,7 @@ def translator():
         except Exception as e:
             translated_message = ""
             interpretation = "Sorry, an error occurred while processing your request."
+            logging.error(f"Error in Translator: {e}")
 
         db.session.commit()
         
@@ -320,6 +333,11 @@ def guesser():
                 temperature=0.7,
             )
             raw_output = response.choices[0].message.content
+
+            # Add logging here
+            logging.info(f"Guesser Input: Message: {message}")
+            logging.info(f"Guesser Output: {raw_output}")
+
             # Parse the output
             pattern = r'(\d+)\.\s*(\w{4})\s*-\s*(\d{1,3})%\s*Reasoning:\s*(.*?)(?=\n\d+\.|$)'
             matches = re.findall(pattern, raw_output, re.DOTALL)
@@ -334,7 +352,7 @@ def guesser():
                 })
             # Process the AI's output as needed
         except Exception as e:
-            print(f"Error: {e}")
+            logging.error(f"Error in Guesser: {e}")
             parsed_output = None
             raw_output = "An error occurred while processing the AI response."
         
