@@ -3,6 +3,11 @@ from openai import OpenAI
 import os
 import re
 import uuid
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
+from flask_migrate import Migrate
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -10,27 +15,43 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 app.secret_key = '7WG20yg6YU/oZdObHCeDR4dq900fyuV9U7q2n6momCE='
 
-COUNTER_FILE = 'counter.txt'
-UNIQUE_COUNTER_FILE = 'unique_counter.txt'
-INTERPRETER_CLICKS_FILE = 'interpreter_clicks.txt'
-TRANSLATOR_CLICKS_FILE = 'translator_clicks.txt'
-GUESSER_CLICKS_FILE = 'guesser_clicks.txt'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
-def read_count(file_name):
-    if os.path.exists(file_name):
-        with open(file_name, 'r') as f:
-            count = f.read()
-            if count:
-                return int(count)
-            else:
-                return 0
-    else:
-        return 0
+class Visitor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    total_visitors = db.Column(db.Integer, default=0)
 
-def write_count(file_name, count):
-    with open(file_name, 'w') as f:
-        f.write(str(count))
+class UniqueVisitor(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    unique_visitors = db.Column(db.Integer, default=0)
+
+class ClickCount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    feature = db.Column(db.String(50), unique=True, nullable=False)
+    count = db.Column(db.Integer, default=0)
+
+
+@app.before_request
+def initialize_counts():
+    if not Visitor.query.first():
+        visitor = Visitor(total_visitors=0)
+        db.session.add(visitor)
+    
+    if not UniqueVisitor.query.first():
+        unique_visitor = UniqueVisitor(unique_visitors=0)
+        db.session.add(unique_visitor)
+    
+    for feature in ['interpreter', 'translator', 'guesser']:
+        if not ClickCount.query.filter_by(feature=feature).first():
+            click_count = ClickCount(feature=feature, count=0)
+            db.session.add(click_count)
+    
+    db.session.commit()
 
 
 MBTI_TYPES = [
@@ -43,28 +64,23 @@ MBTI_TYPES = [
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # Read and update the visitor count
-    visitor_count = read_count(COUNTER_FILE)
-    visitor_count += 1
-    write_count(COUNTER_FILE, visitor_count)
-
-    # Read the visitor count
-    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
-
-    # Check if the user has been counted in this session
+    # Increment total visitors
+    visitor = Visitor.query.first()
+    visitor.total_visitors += 1
+    
+    # Check and increment unique visitors
+    unique_visitor = UniqueVisitor.query.first()
     if not session.get('interpreter_visited'):
-        unique_visitor_count += 1
-        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
+        unique_visitor.unique_visitors += 1
         session['interpreter_visited'] = True
-
-    # Read the interpreter click count
-    interpreter_clicks = read_count(INTERPRETER_CLICKS_FILE)
-
+    
+    # Get interpreter click count
+    interpreter_click = ClickCount.query.filter_by(feature='interpreter').first()
+    
     if request.method == 'POST':
-        # Increment the interpreter click count
-        interpreter_clicks += 1
-        write_count(INTERPRETER_CLICKS_FILE, interpreter_clicks)
-
+        # Increment interpreter click count
+        interpreter_click.count += 1
+        
         mbti_type = request.form['mbti_type']
         user_message = request.form['user_message']
         prompt = (
@@ -93,15 +109,18 @@ def index():
             interpretation = response.choices[0].message.content.strip()
         except Exception as e:
             interpretation = "Sorry, an error occurred while processing your request."
+
+        db.session.commit()
+
         return render_template(
             'index.html',
             interpretation=interpretation,
             mbti_type=mbti_type,
             user_message=user_message,
             mbti_types=MBTI_TYPES,
-            visitor_count=visitor_count,
-            unique_visitor_count=unique_visitor_count,
-            interpreter_clicks=interpreter_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            interpreter_clicks=interpreter_click.count
         )
     else:
         # Default values for GET request
@@ -111,9 +130,9 @@ def index():
             user_message='',
             interpretation=None,
             mbti_types=MBTI_TYPES,
-            unique_visitor_count=unique_visitor_count,
-            visitor_count=visitor_count,
-            interpreter_clicks=interpreter_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            interpreter_clicks=interpreter_click.count
         )
 
     return render_template('index.html')
@@ -121,28 +140,23 @@ def index():
 
 @app.route('/translator', methods=['GET', 'POST'])
 def translator():
-    # Read and update the visitor count
-    visitor_count = read_count(COUNTER_FILE)
-    visitor_count += 1
-    write_count(COUNTER_FILE, visitor_count)
-
-    # Read the visitor count
-    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
-
-    # Check if the user has been counted in this session
-    if not session.get('interpreter_visited'):
-        unique_visitor_count += 1
-        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
-        session['interpreter_visited'] = True
-
-    # Read the translator click count
-    translator_clicks = read_count(TRANSLATOR_CLICKS_FILE)
-
+    # Increment total visitors
+    visitor = Visitor.query.first()
+    visitor.total_visitors += 1
+    
+    # Check and increment unique visitors
+    unique_visitor = UniqueVisitor.query.first()
+    if not session.get('translator_visited'):
+        unique_visitor.unique_visitors += 1
+        session['translator_visited'] = True
+    
+    # Get translator click count
+    translator_click = ClickCount.query.filter_by(feature='translator').first()
+    
     if request.method == 'POST':
-        # Increment the translator click count
-        translator_clicks += 1
-        write_count(TRANSLATOR_CLICKS_FILE, translator_clicks)
-
+        # Increment translator click count
+        translator_click.count += 1
+        
         from_mbti = request.form['from_mbti']
         to_mbti = request.form['to_mbti']
         original_message = request.form['original_message']
@@ -191,6 +205,8 @@ def translator():
             translated_message = ""
             interpretation = "Sorry, an error occurred while processing your request."
 
+        db.session.commit()
+        
         return render_template(
             'translator.html',
             from_mbti=from_mbti,
@@ -199,9 +215,9 @@ def translator():
             translated_message=translated_message,
             interpretation=interpretation,
             mbti_types=MBTI_TYPES,
-            visitor_count=visitor_count,
-            unique_visitor_count=unique_visitor_count,
-            translator_clicks=translator_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            translator_clicks=translator_click.count
         )
     else:
         return render_template(
@@ -212,36 +228,31 @@ def translator():
             translated_message='',
             interpretation='',
             mbti_types=MBTI_TYPES,
-            visitor_count=visitor_count,
-            unique_visitor_count=unique_visitor_count,
-            translator_clicks=translator_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            translator_clicks=translator_click.count
         )
 
 
 @app.route('/guesser', methods=['GET', 'POST'])
 def guesser():
-    # Read and update the visitor count
-    visitor_count = read_count(COUNTER_FILE)
-    visitor_count += 1
-    write_count(COUNTER_FILE, visitor_count)
-
-    # Read the visitor count
-    unique_visitor_count = read_count(UNIQUE_COUNTER_FILE)
-
-    # Check if the user has been counted in this session
-    if not session.get('interpreter_visited'):
-        unique_visitor_count += 1
-        write_count(UNIQUE_COUNTER_FILE, unique_visitor_count)
-        session['interpreter_visited'] = True
-
-    # Read the guesser click count
-    guesser_clicks = read_count(GUESSER_CLICKS_FILE)
-
+    # Increment total visitors
+    visitor = Visitor.query.first()
+    visitor.total_visitors += 1
+    
+    # Check and increment unique visitors
+    unique_visitor = UniqueVisitor.query.first()
+    if not session.get('guesser_visited'):
+        unique_visitor.unique_visitors += 1
+        session['guesser_visited'] = True
+    
+    # Get guesser click count
+    guesser_click = ClickCount.query.filter_by(feature='guesser').first()
+    
     if request.method == 'POST':
-        # Increment the guesser click count
-        guesser_clicks += 1
-        write_count(GUESSER_CLICKS_FILE, guesser_clicks)
-
+        # Increment guesser click count
+        guesser_click.count += 1
+        
         message = request.form['message']
 
         # Create the prompt for the AI
@@ -303,22 +314,24 @@ def guesser():
             else:
                 raw_output = "Unable to parse the AI response."
 
+        db.session.commit()
+
         return render_template(
             'guesser.html',
             message=message,
             output=parsed_output or raw_output,
-            visitor_count=visitor_count,
-            unique_visitor_count=unique_visitor_count,
-            guesser_clicks=guesser_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            guesser_clicks=guesser_click.count
         )
     else:
         return render_template(
             'guesser.html',
             message='',
             output='',
-            visitor_count=visitor_count,
-            unique_visitor_count=unique_visitor_count,
-            guesser_clicks=guesser_clicks
+            visitor_count=visitor.total_visitors,
+            unique_visitor_count=unique_visitor.unique_visitors,
+            guesser_clicks=guesser_click.count
         )
 
 
