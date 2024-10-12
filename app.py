@@ -227,6 +227,7 @@ def index():
 
 
 @app.route('/translator', methods=['GET', 'POST'])
+@requires_premium
 def translator():
     # Increment total visitors
     visitor = Visitor.query.first()
