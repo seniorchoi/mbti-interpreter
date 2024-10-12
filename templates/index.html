@@ -1,51 +1,17 @@
-<!-- File: /mbti-interpreter/templates/index.html -->
-
 {% extends "base.html" %}
 
 {% block title %}MBTI Oracle - Interpreter{% endblock %}
 
 {% block head %}
-    <!-- Meta Tags and CSS Links -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Bootstrap CSS -->
-    <link
-        rel="stylesheet"
-        href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    />
-    <!-- Custom CSS -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='favicon2.png') }}" type="image/x-icon">
+    
 {% endblock %}
 
 {% block content %}
     <div class="container mt-5">
-        <!-- Navigation Bar -->
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="{{ url_for('index') }}">🔮 MBTI Oracle</a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item active">
-                        <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('translator') }}">Translator</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
-                    </li>
-                </ul>
-            </div>
-        </nav>
+        
         <!-- Visitor Count Display -->
         <div class="visitor-count text-right">
-            <p>Total Visitors: {{ visitor_count }}</p>
-        </div>
-        <div class="click-count text-right">
-            <p>Total Interpretations: {{ interpreter_clicks }}</p>
+            <p>Total Visitors: {{ visitor_count }} | Total Interpretations: {{ interpreter_clicks }}</p>
         </div>
         <h1 class="text-center mb-4">MBTI Interpreter</h1>
         <form method="post" id="interpreter-form">
@@ -87,12 +53,6 @@
 {% endblock %}
 
 {% block scripts %}
-    <!-- Include JavaScript files -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
-    ></script>
-
     <!-- Loading Indicator Script -->
     <script>
         const form = document.getElementById('interpreter-form');

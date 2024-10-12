@@ -1,124 +1,82 @@
-<!-- File: /mbti-interpreter/templates/base.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}MBTI Oracle{% endblock %}</title>
+    <!-- Meta Tags and CSS Links -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/litera/bootstrap.min.css"
+    />
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
+    >
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Roboto&display=swap"
+        rel="stylesheet"
+    >
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon2.png') }}" type="image/x-icon">
+    
     {% block head %}{% endblock %}
-    <style>
-        /* Modal styling */
-        .modal {
-        display: none; /* Hidden by default */
-        position: fixed;
-        z-index: 1000; /* Ensure it's on top */
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden; /* Prevent scrolling */
-        background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
-        }
-
-        .modal-content {
-            background-color: #fff;
-            margin: 10% auto; /* 10% from top, centered horizontally */
-            padding: 20px;
-            border: none;
-            width: 80%; /* Could be more or less, depending on screen size */
-            max-width: 400px;
-            border-radius: 8px;
-            position: relative;
-            animation: fadeIn 0.5s;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        /* Input styling */
-        input[type=email], input[type=submit] {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 8px 0;
-            display: inline-block;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        input[type=email]:focus {
-            border-color: #4CAF50;
-            outline: none;
-        }
-
-        input[type=submit] {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        input[type=submit]:hover {
-            background-color: #45a049;
-        }
-
-        /* Fade-in animation */
-        @keyframes fadeIn {
-            from {opacity: 0;}
-            to {opacity: 1;}
-        }
-
-        /* Modal heading */
-        .modal-content h2 {
-            margin-top: 0;
-            text-align: center;
-            color: #333;
-        }
-
-        /* Additional styling */
-        .modal-content p {
-            text-align: center;
-            color: #666;
-        }
-
-        /* Responsive adjustments */
-        @media screen and (max-width: 600px) {
-            .modal-content {
-                width: 90%;
-            }
-        }
-    </style>
 </head>
 <body>
-    {% block content %}{% endblock %}
-
-    <!-- Email Modal -->
-    <div id="emailModal" class="modal">
-        <div class="modal-content">
-            <h2>Please Enter Your Email to Continue</h2>
-            <p>We value your privacy and won't share your email.</p>
-            <form method="POST" action="{{ url_for('submit_email') }}">
-                <input type="email" name="email" placeholder="Enter your email address" required>
-                <input type="submit" value="Submit">
-            </form>
+    {% block navbar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{{ url_for('index') }}">🔮 MBTI Oracle</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item{% if request.endpoint == 'index' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
+                </li>
+                <li class="nav-item{% if request.endpoint == 'translator' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('translator') }}">Translator</a>
+                </li>
+                <li class="nav-item{% if request.endpoint == 'guesser' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
+                </li>
+                {% if session.get('profile') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('profile') }}">{{ session['profile']['name'] }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    </li>
+                {% endif %}
+            </ul>
         </div>
-    </div>
-
-    <!-- JavaScript to handle the modal -->
-    <script>
-        // Function to check if email has been provided
-        function emailProvided() {
-            return {{ 'true' if session.get('email_provided') else 'false' }};
-        }
-
-        // Show the modal after 20 seconds if email not provided
-        window.onload = function() {
-            if (!emailProvided()) {
-                setTimeout(function() {
-                    document.getElementById('emailModal').style.display = 'block';
-                }, 20000); // 20000 milliseconds = 20 seconds
-            }
-        }
-    </script>
+    </nav>
+    {% endblock %}
+    
+    {% block content %}{% endblock %}
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container text-center">
+            <span class="text-muted">
+                &copy; {{ current_year }} MBTI Oracle. All rights reserved.
+                <a href="">Privacy Policy</a> |
+                <a href="">Terms of Service</a>
+            </span>
+        </div>
+    </footer>
+    <!-- Include JavaScript files -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
+    ></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

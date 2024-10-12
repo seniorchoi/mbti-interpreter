@@ -22,3 +22,10 @@ class UserEmail(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    auth0_id = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    is_premium = db.Column(db.Boolean, default=False)

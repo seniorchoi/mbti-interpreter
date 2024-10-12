@@ -8,11 +8,15 @@ from dotenv import load_dotenv
 from flask_migrate import Migrate
 from functools import wraps
 import logging
-
+from authlib.integrations.flask_client import OAuth
+from urllib.parse import urlencode
+import stripe
+from datetime import datetime
 
 load_dotenv()
 
 app = Flask(__name__)
+
 
 # Retrieve the DATABASE_URL environment variable
 db_url = os.environ.get('DATABASE_URL')
@@ -24,18 +28,34 @@ if db_url and db_url.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-
 app.secret_key = os.environ.get('SECRET_KEY')
+
+
+# Initialize OAuth
+oauth = OAuth(app)
+
+auth0 = oauth.register(
+    'auth0',
+    client_id=os.environ['AUTH0_CLIENT_ID'],
+    client_secret=os.environ['AUTH0_CLIENT_SECRET'],
+    api_base_url='https://' + os.environ['AUTH0_DOMAIN'],
+    client_kwargs={
+        'scope': 'openid profile email',
+    },
+    server_metadata_url='https://' + os.environ['AUTH0_DOMAIN'] + '/.well-known/openid-configuration',
+)
 
 logging.basicConfig(level=logging.INFO)
 
 
-from models import Visitor, UniqueVisitor, ClickCount, UserEmail
+from models import Visitor, UniqueVisitor, ClickCount, UserEmail, User
 
 @app.before_request
 def initialize_counts():
@@ -63,8 +83,15 @@ MBTI_TYPES = [
 ]
 
 @app.context_processor
-def inject_session():
-    return dict(session=session)
+def inject_globals():
+    return {
+        'session': session,
+        'current_year': datetime.utcnow().year,
+    }
+
+#@app.context_processor
+#def inject_session():
+#    return dict(session=session)
 
 def email_required(f):
     @wraps(f)
@@ -73,6 +100,26 @@ def email_required(f):
             return redirect(url_for('enter_email'))
         return f(*args, **kwargs)
     return decorated_function
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'profile' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated
+
+def requires_premium(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'profile' not in session:
+            return redirect('/login')
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+        if not user or not user.is_premium:
+            return redirect(url_for('upgrade'))
+        return f(*args, **kwargs)
+    return decorated
+
 
 #ROUTES
 
@@ -384,6 +431,113 @@ def guesser():
             unique_visitor_count=unique_visitor.unique_visitors,
             guesser_clicks=guesser_click.count
         )
+
+
+#LOGIN
+@app.route('/login')
+def login():
+    return auth0.authorize_redirect(redirect_uri=os.environ['AUTH0_CALLBACK_URL'])
+
+@app.route('/callback')
+def callback_handling():
+    auth0.authorize_access_token()
+    resp = auth0.get('userinfo')
+    userinfo = resp.json()
+
+    # Store user information in session
+    session['profile'] = {
+        'user_id': userinfo['sub'],
+        'name': userinfo['name'],
+        'email': userinfo['email'],
+        'picture': userinfo['picture']
+    }
+
+    # Check if user exists in the database
+    user = User.query.filter_by(auth0_id=userinfo['sub']).first()
+    if not user:
+        user = User(
+            auth0_id=userinfo['sub'],
+            email=userinfo['email'],
+            is_premium=False  # Default to free user
+        )
+        db.session.add(user)
+        db.session.commit()
+
+    return redirect(url_for('index'))
+
+@app.route('/logout')
+def logout():
+    # Clear session data
+    session.clear()
+
+    # Construct the logout URL
+    params = {
+        'returnTo': url_for('index', _external=True),
+        'client_id': os.environ['AUTH0_CLIENT_ID']
+    }
+    logout_url = 'https://{}/v2/logout?{}'.format(
+        os.environ['AUTH0_DOMAIN'],
+        urlencode(params)
+    )
+    return redirect(logout_url)
+
+
+#STRIPE
+@app.route('/upgrade')
+@requires_auth
+def upgrade():
+    return render_template('upgrade.html', stripe_publishable_key=os.environ.get('STRIPE_PUBLISHABLE_KEY'))
+
+@app.route('/create-checkout-session', methods=['POST'])
+@requires_auth
+def create_checkout_session():
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': 'price_1Q2qrZKjJ23rv2vUc6hO0tpY',  # Replace with your price ID from Stripe
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('upgrade', _external=True),
+            customer_email=session['profile']['email']
+        )
+        return jsonify({'sessionId': checkout_session.id})
+    except Exception as e:
+        return jsonify(error=str(e)), 403
+
+@app.route('/payment-success')
+@requires_auth
+def payment_success():
+    session_id = request.args.get('session_id')
+    checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+    if checkout_session.payment_status == 'paid':
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+        if user:
+            user.is_premium = True
+            db.session.commit()
+        return render_template('payment_success.html')
+    else:
+        return redirect(url_for('upgrade'))
+
+@app.route('/payment-cancel')
+@requires_auth
+def payment_cancel():
+    return render_template('payment_cancel.html')
+
+@app.route('/profile')
+@requires_auth
+def profile():
+    return render_template('profile.html', user=session['profile'])
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
