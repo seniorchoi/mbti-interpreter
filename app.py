@@ -533,6 +533,15 @@ def payment_cancel():
 def profile():
     return render_template('profile.html', user=session['profile'])
 
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
+
+# Route for Terms of Service
+@app.route('/terms-of-service')
+def terms_of_service():
+    return render_template('terms_of_service.html')
 
 
 
