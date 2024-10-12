@@ -1,16 +1,36 @@
 {% extends "base.html" %}
 
+{% block title %}MBTI Oracle - Your Profile{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
-    <h2>Your Profile</h2>
-    <img src="{{ user['picture'] }}" alt="Profile Picture">
-    <p>Name: {{ user['name'] }}</p>
-    <p>Email: {{ user['email'] }}</p>
-    {% if user.is_premium %}
-        <p>Status: Premium User</p>
-    {% else %}
-        <p>Status: Free User</p>
-        <a href="{{ url_for('upgrade') }}">Upgrade to Premium</a>
-    {% endif %}
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="row">
+                <!-- Profile Picture -->
+                <div class="col-md-3 text-center">
+                    <img src="{{ user['picture'] }}" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                </div>
+                <!-- Profile Details -->
+                <div class="col-md-9">
+                    <h3 class="card-title">{{ user['name'] }}</h3>
+                    <p class="card-text"><strong>Email:</strong> {{ user['email'] }}</p>
+                    <p class="card-text">
+                        <strong>Status:</strong>
+                        {% if user.is_premium %}
+                            <span class="badge badge-success">Premium User</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Free User</span>
+                        {% endif %}
+                    </p>
+                    {% if not user.is_premium %}
+                        <a href="{{ url_for('upgrade') }}" class="btn btn-primary mt-2">
+                            <i class="fas fa-arrow-up"></i> Upgrade to Premium
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

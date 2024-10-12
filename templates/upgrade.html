@@ -1,20 +1,92 @@
 {% extends "base.html" %}
 
-
-{% block title %}MBTI Oracle - Interpreter{% endblock %}
-
-{% block head %}
-
-{% endblock %}
+{% block title %}MBTI Oracle - Upgrade to Premium{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Upgrade to Premium</h2>
-    <p>Access exclusive features by upgrading to a premium account.</p>
-    <button id="checkout-button">Upgrade Now </button>
+    <!-- Hero Section -->
+    <div class="jumbotron text-center bg-transparent">
+        <h1 class="display-4">Upgrade to Premium</h1>
+        <p class="lead">Unlock exclusive features and enhance your MBTI experience.</p>
+        <hr class="my-4">
+    </div>
+
+    <!-- Benefits Section -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-unlock-alt fa-3x mb-3 text-primary"></i>
+                    <h5 class="card-title">Unlimited Interpretations</h5>
+                    <p class="card-text">Enjoy unlimited message interpretations without any restrictions.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-headset fa-3x mb-3 text-primary"></i>
+                    <h5 class="card-title">Priority Support</h5>
+                    <p class="card-text">Get access to priority customer support for any queries or issues.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-3x mb-3 text-primary"></i>
+                    <h5 class="card-title">Exclusive Features</h5>
+                    <p class="card-text">Access premium tools and features designed to enhance your experience.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Card -->
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header text-center">
+            <h4 class="my-0 font-weight-normal">Premium Plan</h4>
+        </div>
+        <div class="card-body">
+            <h1 class="card-title pricing-card-title text-center">$9.99 <small class="text-muted">/ month</small></h1>
+            <ul class="list-unstyled mt-3 mb-4">
+                <li>Unlimited Interpretations</li>
+                <li>Priority Support</li>
+                <li>Access to Exclusive Features</li>
+                <li>Monthly Insights Reports</li>
+            </ul>
+            <!-- Stripe Checkout Button -->
+            <div class="text-center">
+                <button id="checkout-button" class="btn btn-primary btn-lg">
+                    <i class="fas fa-credit-card"></i> Upgrade Now
+                </button>
+            </div>
+            <!-- Trust Badges -->
+            <div class="mt-4 text-center">
+                <img src="{{ url_for('static', filename='stripe-logo.png') }}" alt="Stripe" class="trust-badge mr-2" style="height: 50px;">
+                <img src="{{ url_for('static', filename='ssl-badge.png') }}" alt="Secure Payment" class="trust-badge" style="height: 70px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <blockquote class="blockquote">
+                <p class="mb-0">"Upgrading to premium has transformed my understanding of MBTI. The unlimited interpretations are invaluable!"</p>
+                <footer class="blockquote-footer">Jane Doe, <cite title="Source Title">Psychology Enthusiast</cite></footer>
+            </blockquote>
+        </div>
+        <div class="col-md-6">
+            <blockquote class="blockquote">
+                <p class="mb-0">"The priority support and exclusive features make the premium plan worth every penny."</p>
+                <footer class="blockquote-footer">John Smith, <cite title="Source Title">Business Analyst</cite></footer>
+            </blockquote>
+        </div>
+    </div>
 </div>
 
-
+<!-- Stripe Integration Script -->
 <script src="https://js.stripe.com/v3/"></script>
 <script>
     const stripe = Stripe('{{ stripe_publishable_key }}');
