@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Response{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Your Response</h1>
+    <p><strong>Prompt:</strong></p>
+    <p>{{ prompt }}</p>
+    <hr>
+    <p><strong>Response:</strong></p>
+    <p>{{ response }}</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Back to Home</a>
+</div>
+{% endblock %}

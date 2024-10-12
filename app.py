@@ -9,10 +9,11 @@ from flask_migrate import Migrate
 from functools import wraps
 import logging
 from authlib.integrations.flask_client import OAuth
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse, urljoin
 import stripe
 from datetime import datetime
 from flask import flash
+
 
 load_dotenv()
 
@@ -162,13 +163,29 @@ def index():
     
     # Get interpreter click count
     interpreter_click = ClickCount.query.filter_by(feature='interpreter').first()
+
+    # Initialize variables
+    mbti_type = 'INTJ'
+    user_message = ''
+    interpretation = None
     
     if request.method == 'POST':
+        mbti_type = request.form['mbti_type']
+        user_message = request.form['user_message']
+
+        if 'profile' not in session:
+            # User not authenticated, save form data and redirect to login
+            session['saved_prompt'] = {
+                'mbti_type': mbti_type,
+                'user_message': user_message
+            }
+            # Save the current URL to redirect back after login
+            session['next_url'] = request.url
+            return redirect(url_for('login', next=request.path))
+
         # Increment interpreter click count
         interpreter_click.count += 1
         
-        mbti_type = request.form['mbti_type']
-        user_message = request.form['user_message']
         prompt = (
             f"Determine if the following message: \"{user_message}\" Reflects the traits of {mbti_type}. "
             f"If so, explain how this message reflects the traits of an {mbti_type}. "
@@ -203,34 +220,26 @@ def index():
 
         db.session.commit()
 
-        return render_template(
+    else:
+        # Check if there's saved form data after login
+        saved_prompt = session.pop('saved_prompt', None)
+        if saved_prompt:
+            mbti_type = saved_prompt.get('mbti_type', 'INTJ')
+            user_message = saved_prompt.get('user_message', '')
+            
+    return render_template(
             'index.html',
-            interpretation=interpretation,
             mbti_type=mbti_type,
             user_message=user_message,
+            interpretation=interpretation,
             mbti_types=MBTI_TYPES,
             visitor_count=visitor.total_visitors,
             unique_visitor_count=unique_visitor.unique_visitors,
             interpreter_clicks=interpreter_click.count
-        )
-    else:
-        # Default values for GET request
-        return render_template(
-            'index.html',
-            mbti_type='INTJ',
-            user_message='',
-            interpretation=None,
-            mbti_types=MBTI_TYPES,
-            visitor_count=visitor.total_visitors,
-            unique_visitor_count=unique_visitor.unique_visitors,
-            interpreter_clicks=interpreter_click.count
-        )
-
-    return render_template('index.html')
+    )
 
 
 @app.route('/translator', methods=['GET', 'POST'])
-@requires_premium
 def translator():
     # Increment total visitors
     visitor = Visitor.query.first()
@@ -244,14 +253,32 @@ def translator():
     
     # Get translator click count
     translator_click = ClickCount.query.filter_by(feature='translator').first()
+
+    # Initialize variables with default values
+    from_mbti = 'INTJ'
+    to_mbti = 'INFP'
+    original_message = ''
+    translated_message = ''
+    interpretation = ''
     
     if request.method == 'POST':
-        # Increment translator click count
-        translator_click.count += 1
-        
         from_mbti = request.form['from_mbti']
         to_mbti = request.form['to_mbti']
         original_message = request.form['original_message']
+
+        if 'profile' not in session:
+            # User not authenticated, save form data and redirect to login
+            session['saved_translator'] = {
+                'from_mbti': from_mbti,
+                'to_mbti': to_mbti,
+                'original_message': original_message
+            }
+            # Save the current path to redirect back after login
+            return redirect(url_for('login', next=request.path))
+
+        # Increment translator click count
+        translator_click.count += 1
+        
 
         # Create the prompt for the AI
         prompt = (
@@ -317,13 +344,22 @@ def translator():
             translator_clicks=translator_click.count
         )
     else:
+        # Handle GET request
+        # Check if there's saved form data after login
+        saved_translator = session.pop('saved_translator', None)
+        if saved_translator:
+            # Pre-fill the form but do not process automatically
+            from_mbti = saved_translator.get('from_mbti', 'INTJ')
+            to_mbti = saved_translator.get('to_mbti', 'INFP')
+            original_message = saved_translator.get('original_message', '')
+
         return render_template(
             'translator.html',
-            from_mbti='INTJ',
-            to_mbti='INFP',
-            original_message='',
-            translated_message='',
-            interpretation='',
+            from_mbti=from_mbti,
+            to_mbti=to_mbti,
+            original_message=original_message,
+            translated_message=translated_message,
+            interpretation=interpretation,
             mbti_types=MBTI_TYPES,
             visitor_count=visitor.total_visitors,
             unique_visitor_count=unique_visitor.unique_visitors,
@@ -345,12 +381,24 @@ def guesser():
     
     # Get guesser click count
     guesser_click = ClickCount.query.filter_by(feature='guesser').first()
+
+    # Initialize variables with default values
+    message = ''
+    output = ''
     
-    if request.method == 'POST':
+    if request.method == 'POST':        
+        message = request.form['message']
+
+        if 'profile' not in session:
+            # User not authenticated, save form data and redirect to login
+            session['saved_guesser'] = {
+                'message': message
+            }
+            # Save the current path to redirect back after login
+            return redirect(url_for('login', next=request.path))
+
         # Increment guesser click count
         guesser_click.count += 1
-        
-        message = request.form['message']
 
         # Create the prompt for the AI
         prompt = (
@@ -418,28 +466,54 @@ def guesser():
 
         db.session.commit()
 
+        # Prepare the output to send to the template
+        if parsed_output:
+            output = parsed_output  # List of dictionaries
+        else:
+            output = raw_output  # String message
+
         return render_template(
             'guesser.html',
             message=message,
-            output=parsed_output or raw_output,
+            output=output,
             visitor_count=visitor.total_visitors,
             unique_visitor_count=unique_visitor.unique_visitors,
             guesser_clicks=guesser_click.count
         )
     else:
+        # Handle GET request
+        # Check if there's saved form data after login
+        saved_guesser = session.pop('saved_guesser', None)
+        if saved_guesser:
+            # Pre-fill the form but do not process automatically
+            message = saved_guesser.get('message', '')
+
         return render_template(
             'guesser.html',
-            message='',
-            output='',
+            message=message,
+            output=output,
             visitor_count=visitor.total_visitors,
             unique_visitor_count=unique_visitor.unique_visitors,
             guesser_clicks=guesser_click.count
         )
 
+def is_safe_url(target):
+    """Ensure the target URL is safe for redirection."""
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return (
+        test_url.scheme in ('http', 'https') and
+        ref_url.netloc == test_url.netloc
+    )
 
 #LOGIN
 @app.route('/login')
 def login():
+    next_url = request.args.get('next')
+    if next_url and is_safe_url(next_url):
+        session['next_url'] = next_url
+    else:
+        session['next_url'] = url_for('index')
     return auth0.authorize_redirect(redirect_uri=os.environ['AUTH0_CALLBACK_URL'])
 
 @app.route('/callback')
@@ -467,7 +541,12 @@ def callback_handling():
         db.session.add(user)
         db.session.commit()
 
-    return redirect(url_for('index'))
+    # Redirect back to the original page
+    next_url = session.pop('next_url', None)
+    if next_url and is_safe_url(next_url):
+        return redirect(next_url)
+    else:
+        return redirect(url_for('index'))
 
 @app.route('/logout')
 def logout():
