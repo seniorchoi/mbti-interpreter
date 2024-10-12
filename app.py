@@ -12,6 +12,7 @@ from authlib.integrations.flask_client import OAuth
 from urllib.parse import urlencode
 import stripe
 from datetime import datetime
+from flask import flash
 
 load_dotenv()
 
@@ -92,7 +93,7 @@ def inject_globals():
 #@app.context_processor
 #def inject_session():
 #    return dict(session=session)
-
+"""
 def email_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -100,6 +101,7 @@ def email_required(f):
             return redirect(url_for('enter_email'))
         return f(*args, **kwargs)
     return decorated_function
+"""
 
 def requires_auth(f):
     @wraps(f)
@@ -122,7 +124,7 @@ def requires_premium(f):
 
 
 #ROUTES
-
+"""
 # Route to display the email form
 @app.route('/enter_email', methods=['GET'])
 def enter_email():
@@ -144,6 +146,7 @@ def submit_email():
         return redirect(url_for('index'))
     else:
         return redirect(url_for('index'))
+"""
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -493,45 +496,116 @@ def upgrade():
 @requires_auth
 def create_checkout_session():
     try:
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+        if not user:
+            logging.error("User not found in database.")
+            return jsonify(error="User not found."), 400
+
+        customer_email = user.email
+
+        # Use existing Stripe Customer ID if available
+        if user.stripe_customer_id:
+            customer_id = user.stripe_customer_id
+        else:
+            # Create a new Stripe customer
+            customer = stripe.Customer.create(email=customer_email)
+            customer_id = customer.id
+            user.stripe_customer_id = customer_id
+            db.session.commit()
+
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price': 'price_1Q2qrZKjJ23rv2vUc6hO0tpY',  # Replace with your price ID from Stripe
+                'price': 'price_1Q90vrKjJ23rv2vUUteyfliR',  # Replace with your actual Price ID
                 'quantity': 1,
             }],
             mode='subscription',
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=url_for('upgrade', _external=True),
-            customer_email=session['profile']['email']
+            cancel_url=url_for('payment_cancel', _external=True),
+            customer=customer_id
         )
         return jsonify({'sessionId': checkout_session.id})
     except Exception as e:
+        logging.error(f"Error in create_checkout_session: {e}")
         return jsonify(error=str(e)), 403
 
 @app.route('/payment-success')
 @requires_auth
 def payment_success():
-    session_id = request.args.get('session_id')
-    checkout_session = stripe.checkout.Session.retrieve(session_id)
+    try:
+        session_id = request.args.get('session_id')
+        if not session_id:
+            logging.error("Session ID missing in payment_success")
+            return "Session ID is missing.", 400
 
-    if checkout_session.payment_status == 'paid':
-        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
-        if user:
-            user.is_premium = True
-            db.session.commit()
-        return render_template('payment_success.html')
-    else:
-        return redirect(url_for('upgrade'))
+        # Retrieve the checkout session from Stripe
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+
+        if checkout_session.payment_status == 'paid':
+            user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+            if user:
+                user.is_premium = True
+                # Store Stripe Customer ID and Subscription ID
+                user.stripe_customer_id = checkout_session.customer
+                user.stripe_subscription_id = checkout_session.subscription
+                db.session.commit()
+                session['profile']['is_premium'] = True
+            else:
+                logging.error("User not found in database.")
+                return "User not found.", 404
+            return render_template('payment_success.html')
+        else:
+            logging.warning("Payment not completed.")
+            return redirect(url_for('upgrade'))
+    except Exception as e:
+        logging.error(f"Error in payment_success: {e}")
+        return "An error occurred during payment processing.", 500
 
 @app.route('/payment-cancel')
 @requires_auth
 def payment_cancel():
     return render_template('payment_cancel.html')
 
+@app.route('/cancel-subscription', methods=['POST'])
+@requires_auth
+def cancel_subscription():
+    try:
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+        if not user:
+            logging.error("User not found in database.")
+            return "User not found.", 404
+
+        # Retrieve the Stripe Customer ID and Subscription ID
+        stripe_customer_id = user.stripe_customer_id
+        stripe_subscription_id = user.stripe_subscription_id
+
+        if not stripe_subscription_id:
+            logging.error("No subscription found for user.")
+            return "No active subscription to cancel.", 400
+
+        # Cancel the subscription in Stripe
+        stripe.Subscription.delete(stripe_subscription_id)
+
+        # Update user's status in the database
+        user.is_premium = False
+        user.stripe_subscription_id = None
+        db.session.commit()
+
+        # Update session data
+        session['profile']['is_premium'] = False
+
+        flash("Your subscription has been cancelled.", "success")
+        return redirect(url_for('profile'))
+    except Exception as e:
+        logging.error(f"Error in cancel_subscription: {e}")
+        flash("An error occurred while cancelling your subscription.", "danger")
+        return redirect(url_for('profile'))
+
 @app.route('/profile')
 @requires_auth
 def profile():
-    return render_template('profile.html', user=session['profile'])
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    return render_template('profile.html', user=user)
 
 @app.route('/privacy-policy')
 def privacy_policy():

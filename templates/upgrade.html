@@ -11,6 +11,34 @@
         <hr class="my-4">
     </div>
 
+
+    <!-- Pricing Card -->
+    <div class="card mb-5 shadow-sm">
+        <div class="card-header text-center">
+            <h4 class="my-0 font-weight-normal">Premium Plan</h4>
+        </div>
+        <div class="card-body">
+            <h1 class="card-title pricing-card-title text-center">$4.99 <small class="text-muted">/ month</small></h1>
+            <ul class="list-unstyled mt-3 mb-4">
+                <li>Unlimited Interpretations</li>
+                <li>Priority Support</li>
+                <li>Access to Exclusive Features</li>
+                <li>Monthly Insights Reports</li>
+            </ul>
+            <!-- Stripe Checkout Button -->
+            <div class="text-center">
+                <button id="checkout-button" class="btn btn-primary btn-lg">
+                    <i class="fas fa-credit-card"></i> Upgrade Now
+                </button>
+            </div>
+            <!-- Trust Badges -->
+            <div class="mt-4 text-center">
+                <img src="{{ url_for('static', filename='stripe-logo.png') }}" alt="Stripe" class="trust-badge mr-2" style="height: 50px;">
+                <img src="{{ url_for('static', filename='ssl-badge.png') }}" alt="Secure Payment" class="trust-badge" style="height: 70px;">
+            </div>
+        </div>
+    </div>
+
     <!-- Benefits Section -->
     <div class="row">
         <div class="col-md-4">
@@ -42,32 +70,6 @@
         </div>
     </div>
 
-    <!-- Pricing Card -->
-    <div class="card mb-5 shadow-sm">
-        <div class="card-header text-center">
-            <h4 class="my-0 font-weight-normal">Premium Plan</h4>
-        </div>
-        <div class="card-body">
-            <h1 class="card-title pricing-card-title text-center">$9.99 <small class="text-muted">/ month</small></h1>
-            <ul class="list-unstyled mt-3 mb-4">
-                <li>Unlimited Interpretations</li>
-                <li>Priority Support</li>
-                <li>Access to Exclusive Features</li>
-                <li>Monthly Insights Reports</li>
-            </ul>
-            <!-- Stripe Checkout Button -->
-            <div class="text-center">
-                <button id="checkout-button" class="btn btn-primary btn-lg">
-                    <i class="fas fa-credit-card"></i> Upgrade Now
-                </button>
-            </div>
-            <!-- Trust Badges -->
-            <div class="mt-4 text-center">
-                <img src="{{ url_for('static', filename='stripe-logo.png') }}" alt="Stripe" class="trust-badge mr-2" style="height: 50px;">
-                <img src="{{ url_for('static', filename='ssl-badge.png') }}" alt="Secure Payment" class="trust-badge" style="height: 70px;">
-            </div>
-        </div>
-    </div>
 
     <!-- Testimonials Section -->
     <div class="row">
