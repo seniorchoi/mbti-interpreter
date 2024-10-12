@@ -102,7 +102,7 @@ def email_required(f):
         return f(*args, **kwargs)
     return decorated_function
 """
-
+# Authentication required decorator
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
