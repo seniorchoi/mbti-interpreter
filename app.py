@@ -562,7 +562,6 @@ def vision():
 
     if form.validate_on_submit():
         if not user:
-            flash("Please log in to use this feature.", "warning")
             return redirect(url_for('login', next=request.url))
 
         # Check insights
