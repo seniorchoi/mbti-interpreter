@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Purchase Insights{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Page Header -->
+    <div class="text-center mb-5">
+        <h1>Purchase More Insights</h1>
+        <p>Select a plan that suits your needs and continue enjoying our services.</p>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="row">
+        <!-- Option 1 -->
+        <div class="col-md-4 order-3 order-md-1">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header text-center">
+                    <h4 class="my-0 font-weight-normal"><small>20 insights</small></h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title text-center"><small>$</small>{{ basic_price }}</h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li>Limited Time offer</li>
+                        <li>Access to all features</li>
+                        <li>Email support</li>
+                    </ul>
+                    <button id="purchase-basic" class="btn btn-lg btn-block btn-primary">Buy Now</button>
+                </div>
+            </div>
+        </div>
+        <!-- Option 2 -->
+        <div class="col-md-4 order-2 order-md-2">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header text-center">
+                    <h4 class="my-0 font-weight-normal"><small>120 insights</small></h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title text-center"><small>$</small>{{ standard_price }}</h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li>Standard offer</li>
+                        <li>Access to all features</li>
+                        <li>Priority email support</li>
+                    </ul>
+                    <button id="purchase-standard" class="btn btn-lg btn-block btn-primary">Buy Now</button>
+                </div>
+            </div>
+        </div>
+        <!-- Option 3 -->
+        <div class="col-md-4 order-1 order-md-3">
+            <div class="card mb-4 shadow-sm border-primary">
+                <div class="card-header text-center">
+                    <h4 class="my-0 font-weight-normal"><small>200 insights</small></h4>
+                </div>
+                <div class="card-body">
+                    <h1 class="card-title pricing-card-title text-center"><small>$</small>{{ premium_price }}</h1>
+                    <ul class="list-unstyled mt-3 mb-4">
+                        <li>Most Popular</li>
+                        <li>Access to all features</li>
+                        <li>Premium support</li>
+                    </ul>
+                    <button id="purchase-premium" class="btn btn-lg btn-block btn-primary">Buy Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="text-center mt-5">
+        <img src="{{ url_for('static', filename='stripe-logo.png') }}" alt="Stripe" class="trust-badge mr-2" style="height: 50px;">
+        <img src="{{ url_for('static', filename='ssl-badge.png') }}" alt="Secure Payment" class="trust-badge" style="height: 70px;">
+    </div>
+
+    <!-- Upgrade to Premium Card -->
+    <div class="row mt-5">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body text-center">
+                    <h3 class="card-title">Looking for Unlimited Insights?</h3>
+                    <p class="card-text">Upgrade to our Premium Plan for Unlimited insights and Access to exclusive features.</p>
+                    <a href="{{ url_for('upgrade') }}" class="btn btn-lg btn-success">Upgrade to Premium</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('{{ stripe_publishable_key }}');
+
+        document.getElementById('purchase-basic').addEventListener('click', () => {
+            createCheckoutSession('basic');
+        });
+
+        document.getElementById('purchase-standard').addEventListener('click', () => {
+            createCheckoutSession('standard');
+        });
+
+        document.getElementById('purchase-premium').addEventListener('click', () => {
+            createCheckoutSession('premium');
+        });
+
+        function createCheckoutSession(packageType) {
+            fetch('/create-one-time-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ package_type: packageType }),
+            })
+            .then(response => response.json())
+            .then(session => {
+                if (session.error) {
+                    alert(session.error);
+                } else {
+                    return stripe.redirectToCheckout({ sessionId: session.sessionId });
+                }
+            })
+            .then(result => {
+                if (result.error) {
+                    alert(result.error.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</div>
+{% endblock %}

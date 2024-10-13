@@ -8,11 +8,6 @@
 
 {% block content %}
     <div class="container mt-5">
-        
-        <!-- Visitor Count Display -->
-        <div class="visitor-count text-right">
-            <p>Visitors: {{ visitor_count }} | Translations: {{ translator_clicks }}</p>
-        </div>
         <h1 class="text-center mb-4">MBTI Translator</h1>
         <form method="post" id="translator-form">
             <div class="row">
@@ -59,6 +54,7 @@
                 </div>
             </div>
             <!-- Submit Button -->
+            <div class="text-right">insights: {{user.insights}}</div>
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Translate</button>
             </div>
@@ -75,6 +71,10 @@
                 <p>{{ interpretation }}</p>
             </div>
         {% endif %}
+        <!-- Visitor Count Display -->
+        <div class="visitor-count text-right">
+            <p>Visitors: {{ visitor_count }} | Translations: {{ translator_clicks }}</p>
+        </div>
     </div>
 {% endblock %}
 

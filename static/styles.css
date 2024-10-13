@@ -99,6 +99,7 @@ label {
 }
 
 .visitor-count {
+    margin-top: 40px;
     font-size: 14px;
     color: #777;
 }
@@ -175,4 +176,8 @@ textarea {
 
 .card-text strong {
     color: #495057;
+}
+
+.jumbotron {
+    padding-bottom: 0px;
 }

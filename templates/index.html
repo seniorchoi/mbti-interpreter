@@ -8,11 +8,6 @@
 
 {% block content %}
     <div class="container mt-5">
-        
-        <!-- Visitor Count Display -->
-        <div class="visitor-count text-right">
-            <p>Visitors: {{ visitor_count }} | Interpretations: {{ interpreter_clicks }}</p>
-        </div>
         <h1 class="text-center mb-4">MBTI Interpreter</h1>
         <form method="post" id="interpreter-form">
             <!-- Form Fields -->
@@ -35,6 +30,7 @@
                     placeholder="Type your message here..."
                 >{{ user_message }}</textarea>
             </div>
+            <div class="text-right">insights: {{user.insights}}</div>
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Interpret Message</button>
             </div>
@@ -51,6 +47,10 @@
                 <p>{{ interpretation }}</p>
             </div>
         {% endif %}
+
+        <div class="visitor-count text-right">
+            <p>Visitors: {{ visitor_count }} | Interpretations: {{ interpreter_clicks }}</p>
+        </div>
     </div>
 {% endblock %}
 

@@ -46,6 +46,11 @@
                     <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
                 </li>
                 {% if session.get('profile') %}
+                    {% if not user.is_premium %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('purchase_insights')}}">Get insights</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('profile') }}">Profile</a>
                     </li>
@@ -63,7 +68,6 @@
     {% endblock %}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="container mt-4">
         {% for category, message in messages %}
             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
             {{ message }}
@@ -72,7 +76,6 @@
             </button>
             </div>
         {% endfor %}
-        </div>
     {% endif %}
     {% endwith %}
     

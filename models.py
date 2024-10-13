@@ -28,6 +28,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     auth0_id = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), nullable=False)
+    insights = db.Column(db.Integer, default=50)
     is_premium = db.Column(db.Boolean, default=False)
     stripe_customer_id = db.Column(db.String(100))
     stripe_subscription_id = db.Column(db.String(100))
