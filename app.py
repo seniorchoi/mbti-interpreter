@@ -226,8 +226,8 @@ def index():
                 interpretation = response.choices[0].message.content.strip()
 
                 # Add logging here
-                logging.info(f"Interpreter Input: MBTI Type: {mbti_type}, User Message: {user_message}")
-                logging.info(f"Interpreter Output: {interpretation}")
+                #logging.info(f"Interpreter Input: MBTI Type: {mbti_type}, User Message: {user_message}")
+                #logging.info(f"Interpreter Output: {interpretation}")
             except Exception as e:
                 interpretation = "Sorry, an error occurred while processing your request."
                 logging.error(f"Error in Interpreter: {e}")
@@ -365,9 +365,9 @@ def translator():
                 # You may need to parse the output appropriately
 
                 # Add logging here
-                logging.info(f"Translator Input: From MBTI: {from_mbti}, To MBTI: {to_mbti}, Original Message: {original_message}")
-                logging.info(f"Translator Output: {output}")
-                # For simplicity, let's assume the AI returns:
+                #logging.info(f"Translator Input: From MBTI: {from_mbti}, To MBTI: {to_mbti}, Original Message: {original_message}")
+                #logging.info(f"Translator Output: {output}")
+                
                 # "Translated Message: ... Interpretation: ..."
                 if "Interpretation:" in output:
                     translated_message, interpretation = output.split("Interpretation:")
@@ -504,8 +504,8 @@ def guesser():
                 raw_output = response.choices[0].message.content
 
                 # Add logging here
-                logging.info(f"Guesser Input: Message: {message}")
-                logging.info(f"Guesser Output: {raw_output}")
+                #logging.info(f"Guesser Input: Message: {message}")
+                #logging.info(f"Guesser Output: {raw_output}")
 
                 # Parse the output
                 pattern = r'(\d+)\.\s*(\w{4})\s*-\s*(\d{1,3})%\s*Reasoning:\s*(.*?)(?=\n\d+\.|$)'
