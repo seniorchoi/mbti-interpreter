@@ -41,9 +41,10 @@ migrate = Migrate(app, db)
 
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
-app.secret_key = os.environ.get('SECRET_KEY')
 
-app.config['SECRET_KEY'] = 'your-secret-key'  # Needed for Flask-WTF forms
+#app.secret_key = os.environ.get('SECRET_KEY')
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-default-secret-key')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Max upload size: 5MB
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.jpeg', '.png']
 app.config['UPLOAD_PATH'] = 'uploads'  # Create this directory in your project
