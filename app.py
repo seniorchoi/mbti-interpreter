@@ -485,7 +485,7 @@ def guesser():
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=messages,
-                    max_tokens=300,
+                    max_tokens=400,
                     n=1,
                     temperature=0.7,
                 )
