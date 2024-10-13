@@ -1,4 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed, FileRequired
+from flask_misaka import Misaka
+from werkzeug.utils import secure_filename
+import base64
 from openai import OpenAI
 import os
 import re
@@ -17,7 +22,7 @@ from datetime import datetime
 load_dotenv()
 
 app = Flask(__name__)
-
+Misaka(app)
 
 # Retrieve the DATABASE_URL environment variable
 db_url = os.environ.get('DATABASE_URL')
@@ -37,6 +42,11 @@ migrate = Migrate(app, db)
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 app.secret_key = os.environ.get('SECRET_KEY')
+
+app.config['SECRET_KEY'] = 'your-secret-key'  # Needed for Flask-WTF forms
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Max upload size: 5MB
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.jpeg', '.png']
+app.config['UPLOAD_PATH'] = 'uploads'  # Create this directory in your project
 
 
 # Initialize OAuth
@@ -68,7 +78,7 @@ def initialize_counts():
         unique_visitor = UniqueVisitor(unique_visitors=0)
         db.session.add(unique_visitor)
     
-    for feature in ['interpreter', 'translator', 'guesser']:
+    for feature in ['interpreter', 'translator', 'guesser', 'vision']:
         if not ClickCount.query.filter_by(feature=feature).first():
             click_count = ClickCount(feature=feature, count=0)
             db.session.add(click_count)
@@ -110,6 +120,7 @@ def requires_premium(f):
             return redirect(url_for('upgrade'))
         return f(*args, **kwargs)
     return decorated
+
 
 
 #ROUTES
@@ -533,6 +544,116 @@ def guesser():
         user=user
     )
 
+
+@app.route('/vision', methods=['GET', 'POST'])
+def vision():
+    from forms import ImageUploadForm
+    form = ImageUploadForm()
+    interpretation = None
+    user = None
+    filename = None
+    encoded_image = None  # For base64 embedding
+    file_ext = None  # Initialize file extension
+    output = ''
+
+    # Increment total visitors
+    visitor = Visitor.query.first()
+    visitor.total_visitors += 1
+    # Increment the click count for 'image_analyzer'
+    click_count = ClickCount.query.filter_by(feature='vision').first()
+
+    # Check if the user is authenticated
+    if 'profile' in session:
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+
+    if form.validate_on_submit():
+        if not user:
+            return redirect(url_for('login', next=request.url))
+
+        # Check insights
+        if not user.is_premium and user.insights <= 0:
+            flash("You have run out of insights. Please purchase more or upgrade to premium.", "warning")
+            return redirect(url_for('purchase_insights'))
+
+        # Decrement insights if not premium
+        if not user.is_premium:
+            user.insights -= 2
+            #db.session.commit()
+
+        
+        click_count.count += 1
+
+        db.session.commit()
+
+        # Save the uploaded image
+        uploaded_file = form.image.data
+        filename = secure_filename(uploaded_file.filename)
+        if filename != '':
+            file_ext = os.path.splitext(filename)[1]
+            if file_ext.lower() not in app.config['UPLOAD_EXTENSIONS']:
+                flash("Invalid image format!", "danger")
+                return redirect(request.url)
+
+            image_path = os.path.join(app.config['UPLOAD_PATH'], filename)
+            uploaded_file.save(image_path)
+
+            # Read and encode the image in base64
+            with open(image_path, "rb") as image_file:
+                base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+            # Optionally, read and encode for embedding in HTML
+            with open(image_path, "rb") as image_file:
+                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+
+            # Prepare the message content with the image
+            message_content = [
+                {"type": "text", "text": "Be assertive and confident in your reply. Analyze the following image collage or image and guess the most likely Myers-Briggs personality type(s) of the person who took the image. Explain why you chose that MBTI type." },
+                {"type": "image_url", "image_url": {"url": f"data:image/{file_ext.lower().strip('.')};base64,{base64_image}"}}
+            ]
+            raw_output=None
+
+            # Call the OpenAI API
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4o",  # Use the appropriate model name
+                    messages=[
+                        {"role": "system", "content": "You are an MBTI expert."},
+                        {"role": "user", "content": message_content}
+                    ],
+                    max_tokens=500,
+                    n=1,
+                    temperature=0.7
+                )
+                interpretation = response.choices[0].message.content.strip()
+
+
+                # Optionally, delete the uploaded image after processing
+                os.remove(image_path)
+
+            except Exception as e:
+                flash("An error occurred while analyzing the image.", "danger")
+                logging.error(f"Error in image analysis: {e}")
+                return redirect(request.url)
+
+    return render_template(
+        'vision.html',
+        form=form,
+        interpretation=interpretation,
+        filename=filename,
+        user=user,
+        encoded_image=encoded_image,
+        file_ext=file_ext,
+        vision_clicks=click_count.count,
+        visitor_count=visitor.total_visitors
+    )
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    filename = secure_filename(filename)
+    return send_from_directory(app.config['UPLOAD_PATH'], filename)
+
+
 def is_safe_url(target):
     """Ensure the target URL is safe for redirection."""
     ref_url = urlparse(request.host_url)
@@ -861,13 +982,15 @@ def profile():
 
 @app.route('/privacy-policy')
 def privacy_policy():
-    return render_template('privacy_policy.html')
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    return render_template('privacy_policy.html', user=user)
 
 
 # Route for Terms of Service
 @app.route('/terms-of-service')
 def terms_of_service():
-    return render_template('terms_of_service.html')
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    return render_template('terms_of_service.html', user=user)
 
 
 

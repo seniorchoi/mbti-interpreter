@@ -181,3 +181,21 @@ textarea {
 .jumbotron {
     padding-bottom: 0px;
 }
+
+#drop-area {
+    position: relative;
+    cursor: pointer;
+    max-width: 500px;
+    margin: 0 auto;
+    min-height: 300px;
+}
+
+#drop-area.dragover {
+    background-color: #f0f0f0;
+}
+
+#preview-image {
+    max-width: 100%;
+    height: auto;
+    margin-top: 15px;
+}

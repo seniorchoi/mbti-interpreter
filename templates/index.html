@@ -30,7 +30,6 @@
                     placeholder="Type your message here..."
                 >{{ user_message }}</textarea>
             </div>
-            <div class="text-right">insights: {{user.insights}}</div>
             <div class="text-center">
                 <button type="submit" class="btn btn-primary">Interpret Message</button>
             </div>
@@ -44,7 +43,7 @@
         {% if interpretation %}
             <div class="mt-5">
                 <h2>Interpretation:</h2>
-                <p>{{ interpretation }}</p>
+                <p>{{ interpretation | markdown }}</p>
             </div>
         {% endif %}
 

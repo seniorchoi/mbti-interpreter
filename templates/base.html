@@ -36,6 +36,9 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
+                <li class="nav-item{% if request.endpoint == 'vision' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('vision') }}">Vision</a>
+                </li>
                 <li class="nav-item{% if request.endpoint == 'index' %} active{% endif %}">
                     <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
                 </li>
@@ -48,7 +51,7 @@
                 {% if session.get('profile') %}
                     {% if not user.is_premium %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('purchase_insights')}}">Get insights</a>
+                            <a class="nav-link" href="{{ url_for('purchase_insights')}}">insights: {{user.insights}}</a>
                         </li>
                     {% endif %}
                     <li class="nav-item">
