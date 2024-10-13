@@ -204,9 +204,9 @@ def index():
             ]
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-4",
                     messages=messages,
-                    max_tokens=200,
+                    max_tokens=300,
                     n=1,
                     temperature=0.7
                 )
@@ -341,9 +341,9 @@ def translator():
 
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-4",
                     messages=messages,
-                    max_tokens=200,
+                    max_tokens=300,
                     n=1,
                     temperature=0.7,
                 )
@@ -483,7 +483,7 @@ def guesser():
             raw_output = None
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",
+                    model="gpt-4",
                     messages=messages,
                     max_tokens=300,
                     n=1,
@@ -576,6 +576,12 @@ def callback_handling():
         )
         db.session.add(user)
         db.session.commit()
+    else:
+        # Existing user, check if insights is None
+        if user.insights is None:
+            user.insights = 50  # Assign default insights value
+            db.session.commit()
+    
 
     # Redirect back to the original page
     next_url = session.pop('next_url', None)
