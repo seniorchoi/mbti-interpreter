@@ -78,7 +78,7 @@ def initialize_counts():
         unique_visitor = UniqueVisitor(unique_visitors=0)
         db.session.add(unique_visitor)
     
-    for feature in ['interpreter', 'translator', 'guesser', 'vision']:
+    for feature in ['interpreter', 'translator', 'guesser']:
         if not ClickCount.query.filter_by(feature=feature).first():
             click_count = ClickCount(feature=feature, count=0)
             db.session.add(click_count)
@@ -556,18 +556,13 @@ def vision():
     file_ext = None  # Initialize file extension
     output = ''
 
-    # Increment total visitors
-    visitor = Visitor.query.first()
-    visitor.total_visitors += 1
-    # Increment the click count for 'image_analyzer'
-    click_count = ClickCount.query.filter_by(feature='vision').first()
-
     # Check if the user is authenticated
     if 'profile' in session:
         user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
 
     if form.validate_on_submit():
         if not user:
+            flash("Please log in to use this feature.", "warning")
             return redirect(url_for('login', next=request.url))
 
         # Check insights
@@ -578,12 +573,7 @@ def vision():
         # Decrement insights if not premium
         if not user.is_premium:
             user.insights -= 2
-            #db.session.commit()
-
-        
-        click_count.count += 1
-
-        db.session.commit()
+            db.session.commit()
 
         # Save the uploaded image
         uploaded_file = form.image.data
@@ -643,9 +633,7 @@ def vision():
         filename=filename,
         user=user,
         encoded_image=encoded_image,
-        file_ext=file_ext,
-        vision_clicks=click_count.count,
-        visitor_count=visitor.total_visitors
+        file_ext=file_ext
     )
 
 @app.route('/uploads/<filename>')
