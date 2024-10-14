@@ -83,6 +83,7 @@
     {% endwith %}
     
     {% block content %}{% endblock %}
+
     <footer class="footer mt-auto py-3 bg-light">
         <div class="container text-center">
             <span class="text-muted">
@@ -92,11 +93,52 @@
             </span>
         </div>
     </footer>
+
+    <!-- Announcement! -->
+    <div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h5 class="modal-title" id="announcementModalLabel">Important Update</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <!-- Modal Body -->
+            <div class="modal-body">
+              <p>Your announcement or update message goes here.</p>
+            </div>
+            <!-- Modal Footer (Optional) -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
+            </div>
+          </div>
+        </div>
+      </div>
     <!-- Include JavaScript files -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"
     ></script>
+
+    <!-- Place this script after including jQuery and Bootstrap JS in your base.html 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Use a unique key for the announcement
+        const announcementKey = 'announce_2'; // Increment the version
+        // Check if the user has already seen the popup
+        if (!localStorage.getItem(announcementKey)) {
+        // Show the modal
+        $('#announcementModal').modal('show');
+
+        // Set the flag in localStorage when the modal is closed
+        $('#announcementModal').on('hidden.bs.modal', function () {
+            localStorage.setItem(announcementKey, 'true');
+        });
+        }
+    });
+    </script>-->
     {% block scripts %}{% endblock %}
 </body>
 </html>
