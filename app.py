@@ -525,6 +525,11 @@ def guesser():
                 else:
                     output = raw_output  # String message
 
+                
+                # Add logging here
+                logging.info(f"Guesser Input: Message: {message}")
+                logging.info(f"Guesser Output: {output}")
+
             except Exception as e:
                 logging.error(f"Error in Guesser: {e}")
                 parsed_output = None
@@ -614,6 +619,10 @@ def vision():
                 interpretation = response.choices[0].message.content.strip()
 
                 html_interpretation = markdown(interpretation)
+
+
+                # Add logging here
+                logging.info(f"Image interpretation: {html_interpretation}")
 
                 # Optionally, delete the uploaded image after processing
                 os.remove(image_path)
