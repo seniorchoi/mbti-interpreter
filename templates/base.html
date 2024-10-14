@@ -36,9 +36,6 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item{% if request.endpoint == 'vision' %} active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('vision') }}">Vision</a>
-                </li>
                 <li class="nav-item{% if request.endpoint == 'index' %} active{% endif %}">
                     <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
                 </li>
@@ -48,18 +45,32 @@
                 <li class="nav-item{% if request.endpoint == 'guesser' %} active{% endif %}">
                     <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
                 </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfile" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Premium
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
+                        {% if not user.is_premium %}
+                            <a class="dropdown-item" href="{{ url_for('upgrade') }}">Get Premium</a>
+                            <div class="dropdown-divider"></div>
+                        {% endif %}
+                            <a class="dropdown-item" href="{{ url_for('vision') }}">Image Guesser</a>
+                    </div>
+                </li>
                 {% if session.get('profile') %}
-                    {% if not user.is_premium %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('purchase_insights')}}">insights: {{user.insights}}</a>
-                        </li>
-                    {% endif %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('profile') }}">Profile</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                    </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfile" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Profile
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
+                        {% if not user.is_premium %}
+                            <a class="dropdown-item" href="{{ url_for('purchase_insights') }}">Insights: {{ user.insights }}</a>
+                            <div class="dropdown-divider"></div>
+                        {% endif %}
+                        <a class="dropdown-item" href="{{ url_for('profile') }}">View Profile</a>
+                        <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
+                    </div>
+                </li>
                 {% else %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('login') }}">Login</a>
