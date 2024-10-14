@@ -848,10 +848,10 @@ def purchase_insights():
         'purchase_insights.html',
         user=user,        
         stripe_publishable_key=os.environ.get('STRIPE_PUBLISHABLE_KEY'),
-        basic_price=1,
+        basic_price=2,
         standard_price=6,
         premium_price=8,
-        basic_insights=20,
+        basic_insights=50,
         standard_insights=120,
         premium_insights=200,
     )
@@ -887,8 +887,8 @@ def create_one_time_session():
         # Define your price IDs and insights mapping
         package_details = {
             'basic': {
-                'price_id': 'price_1Q99LKKjJ23rv2vUhi7aqLX6',  # Replace with your actual Price ID
-                'insights': 20
+                'price_id': 'price_1Q99LeKjJ23rv2vUREoligTP',  # Replace with your actual Price ID
+                'insights': 50
             },
             'standard': {
                 'price_id': 'price_1Q99ZSKjJ23rv2vUmajrrkeK',  # Replace with your actual Price ID
