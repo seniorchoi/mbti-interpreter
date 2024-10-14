@@ -552,7 +552,6 @@ def guesser():
 
 
 @app.route('/vision', methods=['GET', 'POST'])
-@requires_premium
 def vision():
     from forms import ImageUploadForm
     form = ImageUploadForm()
