@@ -9,7 +9,7 @@
             <div id="drop-area" class="border border-secondary rounded p-3 text-center">
                 <p>Upload your 3x3 MBTI image here.</p>
                 {{ form.image(class="form-control-file d-none", id="image-input") }}
-                <img id="preview-image" src="{% if encoded_image %}data:image/{{ file_ext.lower().strip('.') }};base64,{{ encoded_image }}{% elif filename %}{{ url_for('uploaded_file', filename=filename) }}{% endif %}" alt="Uploaded Image" class="img-fluid mb-3 {% if not encoded_image and not filename %}d-none{% endif %}">
+                <img id="preview-image" src="{% if encoded_image %}{{ encoded_image }}{% endif %}" alt="Uploaded Image" class="img-fluid mb-3 {% if not encoded_image %}d-none{% endif %}">
             </div>
         </div>
         <div class="text-center">
@@ -23,15 +23,13 @@
             </span>
         </div>
     </form>
-    {% if interpretation %}
-    <div class="mt-5">
+    <div id="result-section" class="mt-5 {% if not interpretation %}d-none{% endif %}">
         <h3>Result:</h3>
-        <p>{{ interpretation | markdown }}</p>
+        <p id="interpretation-text">{% if interpretation %}{{ interpretation }}{% endif %}</p>
     </div>
-    {% endif %}
 
     <div class="text-center">
-        <small>vision uses 2 insights per submission.</small>
+        <small>Vision uses 2 insights per submission.</small>
     </div>
 </div>
 {% endblock %}
@@ -42,6 +40,10 @@
         var dropArea = document.getElementById('drop-area');
         var imageInput = document.getElementById('image-input');
         var previewImage = document.getElementById('preview-image');
+        var form = document.getElementById('upload-form');
+        var loadingMessage = document.getElementById('loading-message');
+        var resultSection = document.getElementById('result-section');
+        var interpretationText = document.getElementById('interpretation-text');
     
         // Prevent default behaviors
         ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
@@ -100,16 +102,42 @@
                 previewImage.classList.remove('d-none');
             }
         }
-    });
-    </script>
-    <!-- Loading Indicator Script -->
-    <script>
-        const form = document.getElementById('upload-form');
-        const loadingMessage = document.getElementById('loading-message');
 
-        form.addEventListener('submit', function() {
+        // Handle form submission via AJAX
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the default form submission
             loadingMessage.style.display = 'inline-block';
+
+            var formData = new FormData(form);
+
+            fetch('{{ url_for("vision") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingMessage.style.display = 'none';
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    // Update the image preview
+                    previewImage.src = data.encoded_image;
+                    previewImage.classList.remove('d-none');
+
+                    // Display the interpretation
+                    interpretationText.innerHTML = data.interpretation;
+                    resultSection.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                loadingMessage.style.display = 'none';
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            });
         });
-        console.log('Unique Visitors: {{ unique_visitor_count }}');
+    });
     </script>
 {% endblock %}

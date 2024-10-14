@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from flask_misaka import Misaka
+from flask_misaka import Misaka, markdown
 from werkzeug.utils import secure_filename
 import base64
 from openai import OpenAI
@@ -547,7 +547,6 @@ def guesser():
 
 
 @app.route('/vision', methods=['GET', 'POST'])
-@requires_premium
 def vision():
     from forms import ImageUploadForm
     form = ImageUploadForm()
@@ -556,20 +555,19 @@ def vision():
     filename = None
     encoded_image = None  # For base64 embedding
     file_ext = None  # Initialize file extension
-    output = ''
 
     # Check if the user is authenticated
     if 'profile' in session:
         user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
 
-    if form.validate_on_submit():
+    if request.method == 'POST':
         if not user:
-            return redirect(url_for('login', next=request.url))
+            return jsonify({'error': 'Please log in first.'}), 401
 
         # Check insights
         if not user.is_premium and user.insights <= 0:
-            flash("You have run out of insights. Please purchase more or upgrade to premium.", "warning")
-            return redirect(url_for('purchase_insights'))
+            flash("You have run out of insights. Please purchase more insights or upgrade to premium.", "warning")
+            return jsonify({'error': 'You have run out of insights. Please purchase more or upgrade to premium.'}), 403
 
         # Decrement insights if not premium
         if not user.is_premium:
@@ -577,13 +575,15 @@ def vision():
             db.session.commit()
 
         # Save the uploaded image
-        uploaded_file = form.image.data
+        uploaded_file = request.files.get('image')
+        if not uploaded_file:
+            return jsonify({'error': 'No image uploaded'}), 400
+
         filename = secure_filename(uploaded_file.filename)
         if filename != '':
             file_ext = os.path.splitext(filename)[1]
             if file_ext.lower() not in app.config['UPLOAD_EXTENSIONS']:
-                flash("Invalid image format!", "danger")
-                return redirect(request.url)
+                return jsonify({'error': 'Invalid image format!'}), 400
 
             image_path = os.path.join(app.config['UPLOAD_PATH'], filename)
             uploaded_file.save(image_path)
@@ -592,17 +592,12 @@ def vision():
             with open(image_path, "rb") as image_file:
                 base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
-            # Optionally, read and encode for embedding in HTML
-            with open(image_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
-
 
             # Prepare the message content with the image
             message_content = [
                 {"type": "text", "text": "Be assertive and confident in your reply. Analyze the following image collage or image and guess the most likely Myers-Briggs personality type(s) of the person who took the image. Explain why you chose that MBTI type." },
                 {"type": "image_url", "image_url": {"url": f"data:image/{file_ext.lower().strip('.')};base64,{base64_image}"}}
             ]
-            raw_output=None
 
             # Call the OpenAI API
             try:
@@ -618,23 +613,29 @@ def vision():
                 )
                 interpretation = response.choices[0].message.content.strip()
 
+                html_interpretation = markdown(interpretation)
 
                 # Optionally, delete the uploaded image after processing
                 os.remove(image_path)
 
+                return jsonify({
+                    'interpretation': html_interpretation,
+                    'encoded_image': f"data:image/{file_ext.lower().strip('.')};base64,{base64_image}",
+                    'file_ext': file_ext.lower().strip('.')
+                })
+
             except Exception as e:
-                flash("An error occurred while analyzing the image.", "danger")
                 logging.error(f"Error in image analysis: {e}")
-                return redirect(request.url)
+                return jsonify({'error': 'An error occurred while analyzing the image.'}), 500
 
     return render_template(
         'vision.html',
         form=form,
-        interpretation=interpretation,
-        filename=filename,
         user=user,
-        encoded_image=encoded_image,
-        file_ext=file_ext
+        interpretation=None,
+        #filename=filename,
+        encoded_image=None,
+        #file_ext=file_ext
     )
 
 @app.route('/uploads/<filename>')
