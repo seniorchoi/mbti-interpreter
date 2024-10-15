@@ -719,7 +719,7 @@ def adaptive_test():
                 # Increment the question number
                 session['question_number'] += 1
 
-                if 'assessment is now complete' in ai_response.lower():
+                if 'session is now complete' in ai_response.lower():
                     # Analyze responses and provide the result
                     mbti_result = analyze_responses(session['conversation'], session['name'])
                     # Store the result in the user's record
@@ -765,16 +765,15 @@ def generate_next_question(conversation, name):
     system_prompt = {
         'role': 'system',
         'content': (
-            f'You are a friendly and empathetic psychologist conducting an adaptive MBTI assessment with a client named {name}. '
-            f'Your goal is to make {name} feel comfortable and listened to. '
-            f'Ask questions in a conversational and caring manner, acknowledging {name}\'s responses thoughtfully. '
-            f'Use indirect and open-ended questions to explore {name}\'s personality traits subtly. '
-            f'Be creative and vary your questions to make the conversation unique and engaging. '
-            f'Avoid asking direct questions about personality traits; instead, explore experiences, preferences, and feelings. '
-            f'Keep the conversation dynamic by occasionally shifting topics or asking unexpected questions that relate to different aspects of {name}\'s life. '
-            f'Use {name}\'s name only after an odd numbered question is asked throughout the conversation. '
-            f'\n\nWhen you feel you have gathered enough information to determine {name}\'s MBTI personality type, conclude the assessment by saying exactly: '
-            f'"Thank you for your time, {name}. The assessment is now complete."'
+            f'You are an experienced and empathetic psychologist conducting an in-depth personality assessment with a client named {name}. '
+            f'Your goal is to understand {name}\'s cognitive processes by encouraging them to share stories and experiences. '
+            f'Ask open-ended, indirect questions that invite {name} to reflect on past events, decisions, and feelings. '
+            f'You want to make {name} feel comfortable and listened to. '
+            f'Avoid direct questions about preferences or personality traits. '
+            f'Ask them in a conversational and caring manner, acknowledging {name}\'s responses thoughtfully. '
+            f'Ensure your questions are engaging and varied, making the conversation feel natural and comfortable. '
+            f'When you feel you have gathered enough information, conclude the assessment by saying exactly: '
+            f'"Thank you for sharing, {name}. Our session is now complete."'
         )
     }
 
@@ -788,9 +787,12 @@ def generate_next_question(conversation, name):
     ai_instruction = {
         'role': 'system',
         'content': (
-            f'Acknowledge {name}\'s response: "{user_last_message}" '
-            f'and then ask a thoughtful follow-up question in a caring and conversational manner.'
-            f' However, if you feel you have enough information to determine {name}\'s MBTI type, let them know the assessment is complete.'
+            f'Acknowledge {name}\'s response thoughtfully and empathetically, response: "{user_last_message}". '
+            f'Then, ask an open-ended question that encourages them to share more about their experiences or perspectives. '
+            f'Include occasional factual or situational questions, such as "Can you describe your typical day?" or "What hobbies or activities do you enjoy the most?" '
+            f'Ensure the question is indirect and does not hint at specific personality traits. '
+            f'If you feel you have enough information to understand {name}\'s cognitive processes, conclude the assessment by saying exactly: '
+            f'"Thank you for sharing, {name}. Our session is now complete."'
         )
     }
     messages.append(ai_instruction)
@@ -811,26 +813,39 @@ def generate_next_question(conversation, name):
 
 
 def analyze_responses(conversation, name):
+    # Convert the conversation into a transcript format
+    transcript = ''
+    for msg in conversation:
+        role = 'Psychologist' if msg['role'] == 'assistant' else name
+        transcript += f"{role}: {msg['content']}\n"
+
     # Use the AI to analyze the conversation and determine MBTI type
     analysis_prompt = {
         'role': 'system',
         'content': (
-        f'You are an expert psychologist analyzing a conversation with {name}. '
-        f'Based on the conversation, determine {name}\'s MBTI personality type. '
-        f'Provide a detailed explanation of your analysis in the following format exactly:\n\n'
-        f'MBTI Type: [4-letter MBTI Type]\n\nExplanation:\n[Your detailed explanation here]'
-        f'\n\nMake sure to start with "MBTI Type:" followed by the type, and then "Explanation:".'
+            f'You are an expert psychologist specializing in MBTI and cognitive functions. '
+            f'Analyze the following transcript of a conversation with a client named {name}. '
+            f'Based on their stories and experiences, infer {name}\'s dominant cognitive functions (e.g., Te, Ti, Se, Si, Fe, Fi, Ne, Ni). '
+            f'Determine {name}\'s MBTI personality type, including their dominant, auxiliary, tertiary, and inferior cognitive functions. '
+            f'Provide a comprehensive analysis, referencing specific parts of the conversation that support your conclusions. '
+            f'Present your findings in the following format exactly:\n\n'
+            f'MBTI Type: [4-letter MBTI Type]\n'
+            f'Explanation:\n[Your detailed explanation here]\n\n'
+            f'Make sure to start with "MBTI Type:" and include all sections as specified.'
         )
     }
-    conversation_messages = [msg for msg in conversation if msg['role'] in ['user', 'assistant']]
-    messages = [analysis_prompt] + conversation_messages
 
+    #conversation_messages = [msg for msg in conversation if msg['role'] in ['user', 'assistant']]
+    messages = [
+        analysis_prompt,
+        {'role': 'user', 'content': transcript}
+    ]
     # Call the OpenAI API
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
-            max_tokens=500,
+            max_tokens=1500,
             temperature=0.7,
         )
         analysis = response.choices[0].message.content.strip()
@@ -839,7 +854,7 @@ def analyze_responses(conversation, name):
         logging.debug(f"AI Analysis Response:\n{analysis}")
 
         # Parse the analysis to extract MBTI type and explanation
-        mbti_result = parse_analysis(analysis)
+        mbti_result = parse_detailed_analysis(analysis)
 
         # Add logging to see the parsed result
         logging.debug(f"Parsed MBTI Result: {mbti_result}")
@@ -849,19 +864,24 @@ def analyze_responses(conversation, name):
         logging.error(f"Error analyzing responses: {e}")
         return {'type': 'Unknown', 'explanation': 'An error occurred during analysis.'}
 
-def parse_analysis(analysis_text):
-    # Simple parser to extract MBTI type and explanation
-    lines = analysis_text.split('\n')
+def parse_detailed_analysis(analysis_text):
     mbti_type = 'Unknown'
     explanation = ''
-    for line in lines:
-        if line.startswith('MBTI Type:'):
-            mbti_type = line.replace('MBTI Type:', '').strip()
-        elif line.startswith('Explanation:'):
-            explanation = line.replace('Explanation:', '').strip()
-        else:
-            explanation += '\n' + line.strip()
-    return {'type': mbti_type, 'explanation': explanation}
+
+    # Use regex to extract information
+    mbti_type_match = re.search(r'MBTI Type:\s*([A-Z]{4})', analysis_text)
+    if mbti_type_match:
+        mbti_type = mbti_type_match.group(1)
+
+
+    explanation_match = re.search(r'Explanation:\s*(.+)', analysis_text, re.DOTALL)
+    if explanation_match:
+        explanation = explanation_match.group(1).strip()
+
+    return {
+        'type': mbti_type,
+        'explanation': explanation
+    }
 
 
 @app.route('/get_conversation')
