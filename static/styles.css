@@ -199,3 +199,24 @@ textarea {
     height: auto;
     margin-top: 15px;
 }
+.message {
+    display: flex;
+    margin-bottom: 15px;
+}
+.message.user {
+    color: #5a5e61;
+}
+
+.message .content {
+    max-width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+}
+.message.user .content {
+    
+}
+
+#conversation {
+    max-height: 500px; /* Adjust this value as needed */
+    overflow-y: auto;
+}

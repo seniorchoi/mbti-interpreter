@@ -1,0 +1,158 @@
+<!-- templates/adaptive_test.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Adaptive MBTI Test{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Adaptive MBTI Test</h1>
+    <div id="conversation" class="mt-4">
+        <!-- Conversation messages will be dynamically inserted here -->
+    </div>
+    <form id="user-input-form" method="post">
+        <div class="form-group">
+            <textarea id="user-input" name="user_input" class="form-control" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <span id="loading-message" class="ml-2" style="display: none;">
+            <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+            Thinking...
+        </span>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('user-input-form');
+    const userInput = document.getElementById('user-input');
+    const conversationDiv = document.getElementById('conversation');
+    const loadingMessage = document.getElementById('loading-message');
+
+    let lastMessageIndex = 0; // Keep track of last displayed message index
+
+    // Add event listener to the textarea for keydown event
+    userInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent adding a new line
+            form.dispatchEvent(new Event('submit')); // Trigger form submission
+        }
+    });
+
+    // Load existing conversation on page load
+    fetch('{{ url_for("get_conversation") }}')
+        .then(response => response.json())
+        .then(data => {
+            updateConversation(data.conversation, true);
+        });
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const userText = userInput.value.trim();
+        if (userText === '') return;
+
+        // Append user's message to conversation
+        //appendMessage('user', userText);
+        userInput.value = '';
+        loadingMessage.style.display = 'inline-block';
+
+        // Send user's input to the server
+        fetch('{{ url_for("adaptive_test") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: new URLSearchParams({
+                'user_input': userText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingMessage.style.display = 'none';
+            if (data.test_complete) {
+                // The test is complete, redirect to the result page
+                window.location.href = "{{ url_for('test_result') }}";
+            } else {
+                updateConversation(data.conversation);
+            }
+        })
+        .catch(error => {
+            loadingMessage.style.display = 'none';
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+
+    function updateConversation(conversation, initialLoad = false) {
+        if (initialLoad) {
+            // For initial load, display all messages without typing effect
+            conversation.forEach(message => {
+                const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
+                appendMessage(message.role, message.content, questionNumber, false);
+                lastMessageIndex++;
+            });
+        } else {
+            // Append only new messages
+            for (let i = lastMessageIndex; i < conversation.length; i++) {
+                const message = conversation[i];
+                const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
+                // Apply typing effect only to the latest assistant message
+                const isTyping = message.role === 'assistant' && i === conversation.length - 1;
+                appendMessage(message.role, message.content, questionNumber, isTyping);
+                lastMessageIndex++;
+            }
+        }
+    }
+
+    function appendMessage(role, content, questionNumber = null, typing = false) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', role);
+
+        const contentElement = document.createElement('div');
+        contentElement.classList.add('content');
+
+        if (role === 'assistant' && questionNumber !== null) {
+            contentElement.innerHTML = `<strong>Question ${questionNumber}:</strong> <span class="message-text"></span>`;
+        } else {
+            contentElement.innerHTML = `<strong>${role === 'assistant' ? 'Assistant' : 'You'}:</strong> <span class="message-text">${content}</span>`;
+        }
+
+        messageElement.appendChild(contentElement);
+        conversationDiv.appendChild(messageElement);
+
+        // Scroll to the bottom of the conversation
+        conversationDiv.scrollTop = conversationDiv.scrollHeight;
+        
+        if (typing) {
+            // Start typing animation
+            const messageTextElement = contentElement.querySelector('.message-text');
+            typeWriterEffect(messageTextElement, content);
+        } else {
+            // Display message immediately
+            const messageTextElement = contentElement.querySelector('.message-text');
+            messageTextElement.textContent = content;
+        }
+
+    }
+
+    function typeWriterEffect(element, text, delay = 10) {
+        let index = 0;
+
+        function type() {
+            if (index < text.length) {
+                element.textContent += text.charAt(index);
+                index++;
+                conversationDiv.scrollTop = conversationDiv.scrollHeight; // Keep scrolling to the bottom
+                setTimeout(type, delay);
+            }
+        }
+
+        type();
+    }
+
+});
+</script>
+{% endblock %}

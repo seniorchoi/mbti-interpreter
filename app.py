@@ -9,6 +9,8 @@ import os
 import re
 import uuid
 from flask_sqlalchemy import SQLAlchemy
+from flask_session import Session
+from sqlalchemy import func
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from functools import wraps
@@ -34,6 +36,9 @@ if db_url and db_url.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-default-secret-key')
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -44,7 +49,6 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 #app.secret_key = os.environ.get('SECRET_KEY')
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-default-secret-key')
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # Max upload size: 5MB
 app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.jpeg', '.png']
 app.config['UPLOAD_PATH'] = 'uploads'  # Create this directory in your project
@@ -64,7 +68,7 @@ auth0 = oauth.register(
     server_metadata_url='https://' + os.environ['AUTH0_DOMAIN'] + '/.well-known/openid-configuration',
 )
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 from models import Visitor, UniqueVisitor, ClickCount, UserEmail, User
@@ -96,7 +100,11 @@ MBTI_TYPES = [
 
 @app.context_processor
 def inject_globals():
+    user = None
+    if 'profile' in session:
+        user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
     return {
+        'user' : user,
         'session': session,
         'current_year': datetime.utcnow().year,
     }
@@ -612,7 +620,7 @@ def vision():
                         {"role": "system", "content": "You are an MBTI expert."},
                         {"role": "user", "content": message_content}
                     ],
-                    max_tokens=500,
+                    max_tokens=400,
                     n=1,
                     temperature=0.7
                 )
@@ -652,6 +660,215 @@ def uploaded_file(filename):
     filename = secure_filename(filename)
     return send_from_directory(app.config['UPLOAD_PATH'], filename)
 
+###Dynamic Test###
+
+@app.route('/adaptive_test', methods=['GET', 'POST'])
+@requires_premium
+def adaptive_test():
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    if not user:
+        flash("User not found.", "warning")
+        return redirect(url_for('index'))
+    
+    # Initialize question number when starting the test
+    if 'question_number' not in session:
+        session['question_number'] = 1
+
+    if 'name' not in session:
+        # Prompt the user for their name
+        if request.method == 'POST':
+            name = request.form.get('name', '').strip()
+            if name:
+                session['name'] = name
+                session['conversation'] = [
+                    {
+                        'role': 'assistant',
+                        'content': f'Nice to meet you, {name}! Let\'s begin our conversation.',
+                        'question_number': 0
+                    }
+                ]
+                session['question_number'] = 1
+                session['exchange_count'] = 0  # Initialize exchange counter
+                session.modified = True
+                return redirect(url_for('adaptive_test'))
+            else:
+                flash("Please enter your name to continue.", "warning")
+        return render_template('ask_name.html', user=user)
+    else:
+        if request.method == 'POST':
+            user_input = request.form.get('user_input', '').strip()
+            if user_input:
+                # Append user's response to the conversation
+                session['conversation'].append({'role': 'user', 'content': user_input})
+
+                # **Increment exchange count before generating the AI's next question**
+                session['exchange_count'] += 1
+                session.modified = True
+
+                # Generate AI's next response
+                ai_response = generate_next_question(session['conversation'], session['name'])
+
+                # Append AI's response to the conversation with question number
+                session['conversation'].append({
+                    'role': 'assistant',
+                    'content': ai_response,
+                    'question_number': session['question_number']
+                })
+                session.modified = True
+
+                # Increment the question number
+                session['question_number'] += 1
+
+                if 'assessment is now complete' in ai_response.lower():
+                    # Analyze responses and provide the result
+                    mbti_result = analyze_responses(session['conversation'], session['name'])
+                    # Store the result in the user's record
+                    # Ensure mbti_result is a dictionary with 'type' and 'explanation'
+                    if isinstance(mbti_result, dict) and 'type' in mbti_result and 'explanation' in mbti_result:
+                        mbti_type = mbti_result.get('type', 'Unknown')
+                    else:
+                        mbti_type = 'Unknown'
+                    user.mbti_type = mbti_type
+                    db.session.commit()
+                    session['mbti_result'] = mbti_result
+                    logging.debug(f"MBTI Result: {mbti_result}")
+                    # Clear session data related to the test
+                    session.pop('question_number', None)
+                    session.pop('conversation', None)
+                    session.pop('exchange_count', None)
+                    session.pop('name', None)
+                    # **Return JSON indicating test completion**
+                    return jsonify({'test_complete': True})
+                else:
+                    return jsonify({'conversation': session['conversation']})
+            else:
+                flash("Please enter your response.", "warning")
+                return redirect(url_for('adaptive_test'))
+
+        return render_template('adaptive_test.html', user=user)
+
+@app.route('/test_result')
+@requires_auth
+def test_result():
+    mbti_result = session.get('mbti_result')
+    if not mbti_result:
+        flash("No test result found.", "warning")
+        return redirect(url_for('adaptive_test'))
+    response = render_template('test_result.html', mbti_result=mbti_result)
+    # Clear the result from the session
+    session.pop('mbti_result', None)
+    return response
+
+
+def generate_next_question(conversation, name):
+    # Include the user's name in the system prompt
+    system_prompt = {
+        'role': 'system',
+        'content': (
+            f'You are a friendly and empathetic psychologist conducting an adaptive MBTI assessment with a client named {name}. '
+            f'Your goal is to make {name} feel comfortable and listened to. '
+            f'Ask questions in a conversational and caring manner, acknowledging {name}\'s responses thoughtfully. '
+            f'Use indirect and open-ended questions to explore {name}\'s personality traits subtly. '
+            f'Be creative and vary your questions to make the conversation unique and engaging. '
+            f'Avoid asking direct questions about personality traits; instead, explore experiences, preferences, and feelings. '
+            f'Keep the conversation dynamic by occasionally shifting topics or asking unexpected questions that relate to different aspects of {name}\'s life. '
+            f'Use {name}\'s name only after an odd numbered question is asked throughout the conversation. '
+            f'\n\nWhen you feel you have gathered enough information to determine {name}\'s MBTI personality type, conclude the assessment by saying exactly: '
+            f'"Thank you for your time, {name}. The assessment is now complete."'
+        )
+    }
+
+    # Build the messages list
+    messages = [system_prompt] + conversation
+
+    # Extract the user's last message
+    user_last_message = conversation[-1]['content']
+
+    # Instruct the AI to acknowledge the user's response
+    ai_instruction = {
+        'role': 'system',
+        'content': (
+            f'Acknowledge {name}\'s response: "{user_last_message}" '
+            f'and then ask a thoughtful follow-up question in a caring and conversational manner.'
+            f' However, if you feel you have enough information to determine {name}\'s MBTI type, let them know the assessment is complete.'
+        )
+    }
+    messages.append(ai_instruction)
+
+    # Call the OpenAI API
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            max_tokens=200,
+            temperature=0.9,  # Increased for creativity
+        )
+        ai_response = response.choices[0].message.content.strip()
+        return ai_response
+    except Exception as e:
+        logging.error(f"Error generating AI response: {e}")
+        return "I'm sorry, but I'm having trouble responding right now. Please try again later."
+
+
+def analyze_responses(conversation, name):
+    # Use the AI to analyze the conversation and determine MBTI type
+    analysis_prompt = {
+        'role': 'system',
+        'content': (
+        f'You are an expert psychologist analyzing a conversation with {name}. '
+        f'Based on the conversation, determine {name}\'s MBTI personality type. '
+        f'Provide a detailed explanation of your analysis in the following format exactly:\n\n'
+        f'MBTI Type: [4-letter MBTI Type]\n\nExplanation:\n[Your detailed explanation here]'
+        f'\n\nMake sure to start with "MBTI Type:" followed by the type, and then "Explanation:".'
+        )
+    }
+    conversation_messages = [msg for msg in conversation if msg['role'] in ['user', 'assistant']]
+    messages = [analysis_prompt] + conversation_messages
+
+    # Call the OpenAI API
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+        )
+        analysis = response.choices[0].message.content.strip()
+
+        # Add logging to see the AI's response
+        logging.debug(f"AI Analysis Response:\n{analysis}")
+
+        # Parse the analysis to extract MBTI type and explanation
+        mbti_result = parse_analysis(analysis)
+
+        # Add logging to see the parsed result
+        logging.debug(f"Parsed MBTI Result: {mbti_result}")
+
+        return mbti_result
+    except Exception as e:
+        logging.error(f"Error analyzing responses: {e}")
+        return {'type': 'Unknown', 'explanation': 'An error occurred during analysis.'}
+
+def parse_analysis(analysis_text):
+    # Simple parser to extract MBTI type and explanation
+    lines = analysis_text.split('\n')
+    mbti_type = 'Unknown'
+    explanation = ''
+    for line in lines:
+        if line.startswith('MBTI Type:'):
+            mbti_type = line.replace('MBTI Type:', '').strip()
+        elif line.startswith('Explanation:'):
+            explanation = line.replace('Explanation:', '').strip()
+        else:
+            explanation += '\n' + line.strip()
+    return {'type': mbti_type, 'explanation': explanation}
+
+
+@app.route('/get_conversation')
+def get_conversation():
+    conversation = session.get('conversation', [])
+    return jsonify({'conversation': conversation})
+
 
 def is_safe_url(target):
     """Ensure the target URL is safe for redirection."""
@@ -661,6 +878,9 @@ def is_safe_url(target):
         test_url.scheme in ('http', 'https') and
         ref_url.netloc == test_url.netloc
     )
+
+
+
 
 #LOGIN
 @app.route('/login')

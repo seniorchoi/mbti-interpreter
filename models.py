@@ -32,3 +32,4 @@ class User(db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     stripe_customer_id = db.Column(db.String(100))
     stripe_subscription_id = db.Column(db.String(100))
+    mbti_type = db.Column(db.String(10))

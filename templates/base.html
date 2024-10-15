@@ -55,6 +55,7 @@
                             <div class="dropdown-divider"></div>
                         {% endif %}
                             <a class="dropdown-item" href="{{ url_for('vision') }}">Image Guesser</a>
+                            <a class="dropdown-item" href="{{ url_for('adaptive_test') }}">Adaptive Test</a>
                     </div>
                 </li>
                 {% if session.get('profile') %}

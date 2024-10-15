@@ -1,0 +1,22 @@
+<!-- templates/test_result.html -->
+
+{% extends "base.html" %}
+
+{% block title %}Your MBTI Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Your MBTI Result</h1>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h2 class="card-title text-center">
+                {{ mbti_result.type if mbti_result.type else 'Type Undetermined' }}
+            </h2>
+            <p class="card-text">{{ mbti_result.explanation }}</p>
+        </div>
+    </div>
+    <div class="text-center mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Home</a>
+    </div>
+</div>
+{% endblock %}
