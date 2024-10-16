@@ -220,3 +220,15 @@ textarea {
     max-height: 500px; /* Adjust this value as needed */
     overflow-y: auto;
 }
+
+
+.original-price {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 1.5rem;
+    margin-right: 8px;
+  }
+  
+  .discounted-price {
+    font-size: 2rem;
+  }
