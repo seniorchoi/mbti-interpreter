@@ -224,7 +224,7 @@ def index():
             ]
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=messages,
                     max_tokens=300,
                     n=1,
@@ -361,7 +361,7 @@ def translator():
 
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=messages,
                     max_tokens=300,
                     n=1,
@@ -503,7 +503,7 @@ def guesser():
             raw_output = None
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",
+                    model="gpt-4o-mini",
                     messages=messages,
                     max_tokens=400,
                     n=1,
@@ -615,7 +615,7 @@ def vision():
             # Call the OpenAI API
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o",  # Use the appropriate model name
+                    model="gpt-4o-mini",  # Use the appropriate model name
                     messages=[
                         {"role": "system", "content": "You are an MBTI expert."},
                         {"role": "user", "content": message_content}
