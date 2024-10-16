@@ -560,6 +560,7 @@ def guesser():
 
 
 @app.route('/vision', methods=['GET', 'POST'])
+@requires_premium
 def vision():
     from forms import ImageUploadForm
     form = ImageUploadForm()
@@ -1001,10 +1002,10 @@ def create_checkout_session():
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price': 'price_1Q9YPSKjJ23rv2vUrtWn3Szt',  # Replace with your actual Price ID
+                'price': 'price_1QAMcyKjJ23rv2vUAirrAfeH',  # Replace with your actual Price ID
                 'quantity': 1,
             }],
-            mode='subscription',
+            mode='payment',
             success_url=url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('payment_cancel', _external=True),
             customer=customer_id
