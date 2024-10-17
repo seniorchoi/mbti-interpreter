@@ -71,7 +71,7 @@ auth0 = oauth.register(
     server_metadata_url='https://' + os.environ['AUTH0_DOMAIN'] + '/.well-known/openid-configuration',
 )
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 from models import Visitor, UniqueVisitor, ClickCount, UserEmail, User, UserConversation,UserMBTIAnalysis, UserTopic
@@ -792,7 +792,7 @@ def adaptive_test():
                     temperature=0.8,
                 )
                 ai_response = response.choices[0].message.content.strip()
-                logging.debug(f"AI Assistant's response: {ai_response}")
+                logging.info(f"AI Assistant's response: {ai_response}")
 
                 #session['conversation'].append({'role': 'user', 'content': user_input})
                 #session['conversation'].append({'role': 'assistant', 'content': ai_response})
@@ -813,7 +813,7 @@ def adaptive_test():
                 # Extract the topic from the AI's message if not already set
                 if 'topic' not in session:
                     session['topic'] = extract_topic_from_ai_response(ai_response)
-                    logging.debug(f"session topic: {session['topic']}")
+                    #logging.info(f"session topic: {session['topic']}")
                     session.modified = True
 
                 MAX_EXCHANGES = 8
@@ -856,7 +856,7 @@ def adaptive_test():
                     db.session.commit()
 
                     session['mbti_result'] = mbti_result
-                    logging.debug(f"MBTI Result: {mbti_result}")
+                    #logging.info(f"MBTI Result: {mbti_result}")
                     # Clear session data related to the test
                     session.pop('question_number', None)
                     session.pop('conversation', None)
@@ -1014,13 +1014,13 @@ def analyze_responses(conversation, name):
         analysis = response.choices[0].message.content.strip()
 
         # Add logging to see the AI's response
-        logging.debug(f"AI Analysis Response:\n{analysis}")
+        #logging.info(f"AI Analysis Response:\n{analysis}")
 
         # Parse the analysis to extract MBTI type and explanation
         mbti_result = parse_detailed_analysis(analysis)
 
         # Add logging to see the parsed result
-        logging.debug(f"Parsed MBTI Result: {mbti_result}")
+        logging.info(f"Parsed MBTI Result: {mbti_result}")
 
         return mbti_result
     except Exception as e:
