@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Combined Report{% endblock %}
+
+{% block content %}
+<div class="container mt-2">
+    <h1 class="text-center">Combined MBTI Report</h1>
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="text-center mt-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="spinner-text">
+            <h5>Combining and analyzing your reports into one, this could take awhile...</span>
+        </div>
+    </div>
+    <!-- Report Content -->
+    <div id="report-content" style="display: none;">
+        <!-- Combined Analysis -->
+        <div id="combined-analysis">
+            <!-- Combined analysis will be inserted here -->
+        </div>
+        <!-- Past Conversations -->
+        <h2 class="mt-5">Past Conversations</h2>
+        <div class="accordion" id="pastConversationsAccordion">
+            <!-- Past conversations will be inserted here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include Showdown.js for Markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch combined report data
+    fetch('{{ url_for("get_combined_report_data") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                // Handle error
+                document.getElementById('loading-indicator').innerHTML = '<p class="text-danger">' + data.error + '</p>';
+            } else {
+                var converter = new showdown.Converter();
+                var html = converter.makeHtml(data.combined_analysis);
+                // Hide loading indicator
+                document.getElementById('loading-indicator').style.display = 'none';
+                // Show report content
+                document.getElementById('report-content').style.display = 'block';
+                // Insert combined analysis
+                document.getElementById('combined-analysis').innerHTML = '<div class="mt-2"><h3">Comprehensive Analysis</h3>' + html + '</div>';
+                // Insert past conversations
+                renderPastConversations(data.past_conversations);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching combined report data:', error);
+            document.getElementById('loading-indicator').innerHTML = '<p class="text-danger">An error occurred while generating the combined report. Please try again later.</p>';
+        });
+
+    function renderPastConversations(conversations) {
+        const accordion = document.getElementById('pastConversationsAccordion');
+        conversations.forEach((conv, index) => {
+            const card = document.createElement('div');
+            card.classList.add('card');
+
+            const cardHeader = document.createElement('div');
+            cardHeader.classList.add('card-header');
+            cardHeader.id = 'heading' + index;
+
+            const h2 = document.createElement('h2');
+            h2.classList.add('mb-0');
+
+            const button = document.createElement('button');
+            button.classList.add('btn', 'btn-link');
+            button.type = 'button';
+            button.setAttribute('data-toggle', 'collapse');
+            button.setAttribute('data-target', '#collapse' + index);
+            button.setAttribute('aria-expanded', 'false');
+            button.setAttribute('aria-controls', 'collapse' + index);
+            button.innerText = 'Session on ' + conv.timestamp;
+
+            h2.appendChild(button);
+            cardHeader.appendChild(h2);
+
+            const collapseDiv = document.createElement('div');
+            collapseDiv.id = 'collapse' + index;
+            collapseDiv.classList.add('collapse');
+            collapseDiv.setAttribute('aria-labelledby', 'heading' + index);
+            collapseDiv.setAttribute('data-parent', '#pastConversationsAccordion');
+
+            const cardBody = document.createElement('div');
+            cardBody.classList.add('card-body');
+
+            conv.conversation.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.classList.add('message', msg.role);
+                const role = msg.role === 'assistant' ? 'Psychologist' : 'You';
+                msgDiv.innerHTML = '<p><strong>' + role + ':</strong> ' + msg.content + '</p>';
+                cardBody.appendChild(msgDiv);
+            });
+
+            collapseDiv.appendChild(cardBody);
+
+            card.appendChild(cardHeader);
+            card.appendChild(collapseDiv);
+
+            accordion.appendChild(card);
+        });
+    }
+});
+</script>
+{% endblock %}

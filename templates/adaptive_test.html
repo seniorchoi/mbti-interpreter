@@ -5,7 +5,7 @@
 {% block title %}MBTI Psychologist{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-2">
     <h1 class="text-center">MBTI Psychologist</h1>
     <div id="conversation" class="mt-4">
         <!-- Conversation messages will be dynamically inserted here -->
@@ -14,11 +14,15 @@
         <div class="form-group">
             <textarea id="user-input" name="user_input" class="form-control" rows="3" required></textarea>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
-        <span id="loading-message" class="ml-2" style="display: none;">
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+        <div class="text-center">
+            <span id="loading-message" class="ml-2" style="display: none;">
             <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
             Thinking...
         </span>
+        </div>
     </form>
 </div>
 {% endblock %}
@@ -45,7 +49,31 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('{{ url_for("get_conversation") }}')
         .then(response => response.json())
         .then(data => {
-            updateConversation(data.conversation, true);
+            if (data.conversation.length === 0) {
+                // Conversation is empty, trigger initial AI response
+                loadingMessage.style.display = 'inline-block';
+                fetch('{{ url_for("adaptive_test") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new URLSearchParams({
+                        'user_input': ''  // Empty input to trigger AI's initial message
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingMessage.style.display = 'none';
+                    updateConversation(data.conversation, true);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            } else {
+                updateConversation(data.conversation, true);
+            }
         });
 
     form.addEventListener('submit', function(event) {
@@ -90,19 +118,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (initialLoad) {
             // For initial load, display all messages without typing effect
             conversation.forEach(message => {
-                const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
-                appendMessage(message.role, message.content, questionNumber, false);
-                lastMessageIndex++;
+                if (message.role !== 'system') {
+                    const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
+                    appendMessage(message.role, message.content, questionNumber, false);
+                    lastMessageIndex++;
+                }
             });
         } else {
             // Append only new messages
             for (let i = lastMessageIndex; i < conversation.length; i++) {
                 const message = conversation[i];
-                const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
-                // Apply typing effect only to the latest assistant message
-                const isTyping = message.role === 'assistant' && i === conversation.length - 1;
-                appendMessage(message.role, message.content, questionNumber, isTyping);
-                lastMessageIndex++;
+                if (message.role !== 'system') {
+                    const questionNumber = message.role === 'assistant' ? message.question_number || null : null;
+                    // Apply typing effect only to the latest assistant message
+                    const isTyping = message.role === 'assistant' && i === conversation.length - 1;
+                    appendMessage(message.role, message.content, questionNumber, isTyping);
+                    lastMessageIndex++;
+                }
             }
         }
     }

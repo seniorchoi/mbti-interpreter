@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-2">
     <h1 class="text-center">MBTI Image Guesser</h1>
     <form id="upload-form" method="POST" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <div class="form-group">
             <div id="drop-area" class="border border-secondary rounded p-3 text-center">
-                <p>Upload your 3x3 MBTI image here.</p>
+                <small>Upload image.</small>
                 {{ form.image(class="form-control-file d-none", id="image-input") }}
                 <img id="preview-image" src="{% if encoded_image %}{{ encoded_image }}{% endif %}" alt="Uploaded Image" class="img-fluid mb-3 {% if not encoded_image %}d-none{% endif %}">
             </div>
@@ -26,10 +26,6 @@
     <div id="result-section" class="mt-5 {% if not interpretation %}d-none{% endif %}">
         <h3>Result:</h3>
         <p id="interpretation-text">{% if interpretation %}{{ interpretation }}{% endif %}</p>
-    </div>
-
-    <div class="text-center">
-        <small>Vision uses 2 insights per submission.</small>
     </div>
 </div>
 {% endblock %}

@@ -6,10 +6,10 @@
 
 {% block content %}
 
-<h2 class="card-title text-center">{{ mbti_result.type if mbti_result.type else 'Type Undetermined' }}</h2>
-
-<div class="card mt-4">
+<div class="card mt-2">
   <div class="card-body">
+  <h1 class="card-title text-center">{{ mbti_result.type if mbti_result.type else 'Type Undetermined' }}</h2>
+    <h2 class="card-title">{{ mbti_result.confidence if mbti_result.confidence else '?' }} %</h2>
     <h4 class="card-title">Detailed Explanation</h4>
     <p class="card-text">{{ mbti_result.explanation | markdown}}</p>
   </div>

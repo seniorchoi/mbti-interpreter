@@ -19,6 +19,9 @@ from authlib.integrations.flask_client import OAuth
 from urllib.parse import urlencode, urlparse, urljoin
 import stripe
 from datetime import datetime
+import json
+import tiktoken
+from difflib import SequenceMatcher
 
 
 load_dotenv()
@@ -71,7 +74,7 @@ auth0 = oauth.register(
 logging.basicConfig(level=logging.DEBUG)
 
 
-from models import Visitor, UniqueVisitor, ClickCount, UserEmail, User
+from models import Visitor, UniqueVisitor, ClickCount, UserEmail, User, UserConversation,UserMBTIAnalysis, UserTopic
 
 @app.before_request
 def initialize_counts():
@@ -130,6 +133,14 @@ def requires_premium(f):
         return f(*args, **kwargs)
     return decorated
 
+def estimate_tokens(text):
+    encoding = tiktoken.encoding_for_model('gpt-4')
+    tokens = encoding.encode(text)
+    return len(tokens)
+
+@app.template_filter('fromjson')
+def fromjson(value):
+    return json.loads(value)
 
 
 #ROUTES
@@ -560,7 +571,7 @@ def guesser():
 
 
 @app.route('/vision', methods=['GET', 'POST'])
-@requires_premium
+@requires_auth
 def vision():
     from forms import ImageUploadForm
     form = ImageUploadForm()
@@ -609,21 +620,21 @@ def vision():
 
             # Prepare the message content with the image
             message_content = [
-                {"type": "text", "text": "Be assertive and confident in your reply. Analyze the following image collage or image and guess the most likely Myers-Briggs personality type(s) of the person who took the image. Explain why you chose that MBTI type." },
+                {"type": "text", "text": "Analyze the following image and describe which 3 MBTI type you can most closely associate it to, and put a percentage above 83 percent for each. Explain your reasoning. Do not say 'I can't analyze the image directly.'" },
                 {"type": "image_url", "image_url": {"url": f"data:image/{file_ext.lower().strip('.')};base64,{base64_image}"}}
             ]
 
             # Call the OpenAI API
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4o-mini",  # Use the appropriate model name
+                    model="gpt-4o",  # Use the appropriate model name
                     messages=[
                         {"role": "system", "content": "You are an MBTI expert."},
                         {"role": "user", "content": message_content}
                     ],
                     max_tokens=400,
                     n=1,
-                    temperature=0.7
+                    temperature=0.9
                 )
                 interpretation = response.choices[0].message.content.strip()
 
@@ -670,24 +681,35 @@ def adaptive_test():
     if not user:
         flash("User not found.", "warning")
         return redirect(url_for('index'))
-    
+    """
+    # Retrieve past conversations
+    past_conversations = UserConversation.query.filter_by(user_id=user.id).all()
+
+    # Extract previously asked questions
+    past_questions = []
+    for conv in past_conversations:
+        conversation = json.loads(conv.conversation)
+        questions = [msg['content'] for msg in conversation if msg['role'] == 'assistant']
+        past_questions.extend(questions)
+
+    # Limit to the last 5 questions to avoid exceeding token limits
+    recent_past_questions = past_questions[-10:]
+    """
     # Initialize question number when starting the test
     if 'question_number' not in session:
         session['question_number'] = 1
 
+    if 'exchange_count' not in session:
+        session['exchange_count'] = 0
+    
     if 'name' not in session:
         # Prompt the user for their name
         if request.method == 'POST':
             name = request.form.get('name', '').strip()
             if name:
                 session['name'] = name
-                session['conversation'] = [
-                    {
-                        'role': 'assistant',
-                        'content': f'Nice to meet you, {name}! Let\'s begin our conversation.',
-                        'question_number': 0
-                    }
-                ]
+                session['session_id'] = str(uuid.uuid4())
+                session['conversation'] = []
                 session['question_number'] = 1
                 session['exchange_count'] = 0  # Initialize exchange counter
                 session.modified = True
@@ -696,41 +718,143 @@ def adaptive_test():
                 flash("Please enter your name to continue.", "warning")
         return render_template('ask_name.html', user=user)
     else:
+        if 'system_prompt' not in session:
+            # Fetch topics already explored by the user
+            explored_topics = [ut.topic for ut in user.user_topics]
+            past_questions_text = '; '.join(session.get('past_questions', []))
+            # Instruct the AI to select a new topic
+            system_prompt = {
+                'role': 'system',
+                'content': (
+                    f'You are an experienced and empathetic psychologist conducting an in-depth personality assessment with a client named {session["name"]}. '
+                    f'Your goal is to understand {session["name"]}\'s cognitive processes by encouraging them to share stories, experiences, thoughts, and feelings. '
+                    f'Please follow these instructions carefully:\n'
+                    f'1. Select a single topic relevant to MBTI personality assessment that has not been previously discussed with {session["name"]}. '
+                    f'2. Do not choose any of the following topics: {", ".join(explored_topics)}.\n'
+                    f'3. Introduce the topic by stating exactly: "The topic I would like to explore with you today is: [Topic]".\n'
+                    f'4. Ask only **one** open-ended, thought-provoking question related to this topic.\n'
+                    f'5. Do **not** ask multiple questions at once.\n'
+                    f'6. Wait for {session["name"]}\'s response before proceeding.\n'
+                    f'7. After each of {session["name"]}\'s responses, provide a brief acknowledgment (one sentence) and then ask the next open-ended question related to the topic.\n'
+                    f'8. Ensure that each question is unique and explores new angles or subtopics not previously covered.\n'
+                    f'9. Avoid repeating or rephrasing questions you have already asked.\n'
+                    f'10. Do not ask direct questions about preferences or personality traits.\n'
+                    f'11. Ensure the questions are indirect and do not hint at specific personality traits.\n'
+                    f'12. Make the conversation feel natural and comfortable.\n'
+                    f'13. When you feel you have gathered enough information to understand {session["name"]}\'s cognitive processes, conclude the assessment by stating exactly: "Thank you for sharing, {session["name"]}. Our session is now complete." Only say this closing statement at the very end of the conversation.\n'
+                    f'14. Do not include any content outside of these instructions.\n'
+                    f'15. Under no circumstances should you include multiple questions or the closing statement in a single response before the end of the session.'
+                )
+            }
+            session['system_prompt'] = system_prompt
+            session['conversation'] = []
+            session.modified = True
+            
         if request.method == 'POST':
             user_input = request.form.get('user_input', '').strip()
-            if user_input:
+
+            if not session['conversation']:
+                # Initial interaction, generate AI's first message
+                messages = [session['system_prompt']]
+            else:
+                # Append user's response
+                if user_input:
+                    session['conversation'].append({'role': 'user', 'content': user_input})
+                    session.modified = True
+                else:
+                    flash("Please enter your response.", "warning")
+                    return redirect(url_for('adaptive_test'))
+                """
+                if user_input:
+                    if not user_input and not session['conversation']:
+                        messages = [session['system_prompt']]
+                    else:
+                        # Append user's response
+                        session['conversation'].append({'role': 'user', 'content': user_input})
+                """
+                messages = [session['system_prompt']] + session['conversation']     
                 # Append user's response to the conversation
-                session['conversation'].append({'role': 'user', 'content': user_input})
+                #session['conversation'].append({'role': 'user', 'content': user_input})
+                #session.modified = True
+                #messages = [session['system_prompt']] + session['conversation'] + [{'role': 'user', 'content': user_input}]
 
-                # **Increment exchange count before generating the AI's next question**
-                session['exchange_count'] += 1
-                session.modified = True
+            # **Increment exchange count before generating the AI's next question**
+            session['exchange_count'] += 1
+            session.modified = True
 
-                # Generate AI's next response
-                ai_response = generate_next_question(session['conversation'], session['name'])
+            # Generate AI's next response
+            #ai_response = generate_next_question(session['conversation'], session['name'], recent_past_questions)
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=messages,
+                    max_tokens=200,
+                    temperature=0.8,
+                )
+                ai_response = response.choices[0].message.content.strip()
+                logging.debug(f"AI Assistant's response: {ai_response}")
 
+                #session['conversation'].append({'role': 'user', 'content': user_input})
+                #session['conversation'].append({'role': 'assistant', 'content': ai_response})
                 # Append AI's response to the conversation with question number
                 session['conversation'].append({
                     'role': 'assistant',
                     'content': ai_response,
                     'question_number': session['question_number']
                 })
+                if 'past_questions' not in session:
+                    session['past_questions'] = []
+                session['past_questions'].append(ai_response)
+                
                 session.modified = True
 
                 # Increment the question number
                 session['question_number'] += 1
+                # Extract the topic from the AI's message if not already set
+                if 'topic' not in session:
+                    session['topic'] = extract_topic_from_ai_response(ai_response)
+                    logging.debug(f"session topic: {session['topic']}")
+                    session.modified = True
 
-                if 'session is now complete' in ai_response.lower():
+                MAX_EXCHANGES = 8
+
+                if 'session is now complete' in ai_response.lower() or session['exchange_count'] >= MAX_EXCHANGES:
                     # Analyze responses and provide the result
                     mbti_result = analyze_responses(session['conversation'], session['name'])
-                    # Store the result in the user's record
-                    # Ensure mbti_result is a dictionary with 'type' and 'explanation'
-                    if isinstance(mbti_result, dict) and 'type' in mbti_result and 'explanation' in mbti_result:
-                        mbti_type = mbti_result.get('type', 'Unknown')
-                    else:
-                        mbti_type = 'Unknown'
-                    user.mbti_type = mbti_type
+
+                    # Generate a unique session ID if not already in session
+                    if 'session_id' not in session:
+                        session['session_id'] = str(uuid.uuid4())
+
+                    # Save the conversation to the database
+                    conversation_record = UserConversation(
+                        user_id=user.id,
+                        session_id=session['session_id'],
+                        conversation=json.dumps(session['conversation']),
+                    )
+                    db.session.add(conversation_record)
+
+                    # Save the explored topic
+                    if 'topic' in session:
+                        user_topic = UserTopic(
+                            user_id=user.id,
+                            topic=session['topic'],
+                            timestamp=datetime.utcnow()
+                        )
+                        db.session.add(user_topic)
+                    
+                    analysis_record = UserMBTIAnalysis(
+                        user_id=user.id,
+                        session_id=session['session_id'],
+                        mbti_type=mbti_result.get('type', 'Unknown'),
+                        confidence=mbti_result.get('confidence', 0.0),
+                        explanation=mbti_result.get('explanation', '')
+                    )
+                    db.session.add(analysis_record)
+                    
+                    user.mbti_type = mbti_result.get('type', 'Unknown')
                     db.session.commit()
+
                     session['mbti_result'] = mbti_result
                     logging.debug(f"MBTI Result: {mbti_result}")
                     # Clear session data related to the test
@@ -738,13 +862,16 @@ def adaptive_test():
                     session.pop('conversation', None)
                     session.pop('exchange_count', None)
                     session.pop('name', None)
+                    session.pop('session_id', None)
+                    session.pop('topic', None)
+                    session.pop('system_prompt', None)
                     # **Return JSON indicating test completion**
                     return jsonify({'test_complete': True})
                 else:
                     return jsonify({'conversation': session['conversation']})
-            else:
-                flash("Please enter your response.", "warning")
-                return redirect(url_for('adaptive_test'))
+            except Exception as e:
+                logging.error(f"Error generating AI response: {e}")
+                return jsonify({'error': 'An error occurred while generating the AI response.'}), 500            
 
         return render_template('adaptive_test.html', user=user)
 
@@ -761,19 +888,24 @@ def test_result():
     return response
 
 
-def generate_next_question(conversation, name):
+def generate_next_question(conversation, name, past_questions):
+    past_questions_text = '; '.join(past_questions)
+
     # Include the user's name in the system prompt
     system_prompt = {
         'role': 'system',
         'content': (
             f'You are an experienced and empathetic psychologist conducting an in-depth personality assessment with a client named {name}. '
-            f'Your goal is to understand {name}\'s cognitive processes by encouraging them to share stories and experiences. '
-            f'Ask open-ended, indirect questions that invite {name} to reflect on past events, decisions, and feelings. '
-            f'You want to make {name} feel comfortable and listened to. '
+            f'Your goal is to understand {name}\'s cognitive processes by encouraging them to share stories, experiences, thoughts, and feelings. '
+            f'Ask open-ended, thought-provoking questions that explore different aspects of {name}\'s life, perspectives, motivations, and behaviors. '
+            f'Ensure that each question is unique and delves into new topics or angles not previously covered in the conversation. '
+            f'Avoid repeating or rephrasing questions you have already asked. '
+            f'Do not list or mention any past questions. '
+            f'Here are some questions you have already asked: {past_questions_text}. '
             f'Avoid direct questions about preferences or personality traits. '
-            f'Ask them in a conversational and caring manner, acknowledging {name}\'s responses thoughtfully. '
-            f'Ensure your questions are engaging and varied, making the conversation feel natural and comfortable. '
-            f'When you feel you have gathered enough information, conclude the assessment by saying exactly: '
+            f'Ensure the question is indirect and does not hint at specific personality traits. '
+            f'Make the conversation feel natural and comfortable, and encourage {name} to reflect deeply. '
+            f'When you feel you have gathered enough information to understand {name}\'s cognitive processes, conclude the assessment by saying exactly: '
             f'"Thank you for sharing, {name}. Our session is now complete."'
         )
     }
@@ -782,38 +914,66 @@ def generate_next_question(conversation, name):
     messages = [system_prompt] + conversation
 
     # Extract the user's last message
-    user_last_message = conversation[-1]['content']
-
-    # Instruct the AI to acknowledge the user's response
-    ai_instruction = {
-        'role': 'system',
-        'content': (
-            f'Acknowledge {name}\'s response thoughtfully and empathetically, response: "{user_last_message}". '
-            f'Then, ask an open-ended question that encourages them to share more about their experiences or perspectives. '
-            f'Include occasional factual or situational questions, such as "Can you describe your typical day?" or "What hobbies or activities do you enjoy the most?" '
-            f'Ensure the question is indirect and does not hint at specific personality traits. '
-            f'If you feel you have enough information to understand {name}\'s cognitive processes, conclude the assessment by saying exactly: '
-            f'"Thank you for sharing, {name}. Our session is now complete."'
-        )
-    }
-    messages.append(ai_instruction)
+    #user_last_message = conversation[-1]['content']
 
     # Call the OpenAI API
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=messages,
             max_tokens=200,
             temperature=0.9,  # Increased for creativity
         )
         ai_response = response.choices[0].message.content.strip()
+
+        # Check if the question is similar to past questions
+        if is_similar_to_past_questions(ai_response, past_questions):
+            # If similar, prompt the AI to generate a new question
+            for _ in range(3):  # Retry up to 3 times
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages + [{'role': 'assistant', 'content': ai_response}],
+                    max_tokens=200,
+                    temperature=0.9,
+                )
+                ai_response = response.choices[0].message.content.strip()
+                if not is_similar_to_past_questions(ai_response, past_questions):
+                    break
+            else:
+                # If still similar after retries, proceed with the last response
+                pass
+
         return ai_response
     except Exception as e:
         logging.error(f"Error generating AI response: {e}")
         return "I'm sorry, but I'm having trouble responding right now. Please try again later."
 
 
+def extract_topic_from_ai_response(ai_response):
+    match = re.search(
+        r'The topic I would like to explore with you today is:\s*(.*?)(?:\.|\")',
+        ai_response, re.IGNORECASE
+    )
+    if match:
+        topic = match.group(1).strip()
+        return topic
+    else:
+        return 'Unknown Topic'
+
+def is_similar_to_past_questions(new_question, past_questions, threshold=0.7):
+    for past_question in past_questions:
+        similarity = SequenceMatcher(None, new_question.lower(), past_question.lower()).ratio()
+        if similarity > threshold:
+            return True
+    return False
+
 def analyze_responses(conversation, name):
+    # Initialize mbti_result with default values
+    mbti_result = {
+        'type': 'Unknown',
+        'confidence': 0.0,
+        'explanation': 'An error occurred during analysis.'
+    }
     # Convert the conversation into a transcript format
     transcript = ''
     for msg in conversation:
@@ -828,9 +988,11 @@ def analyze_responses(conversation, name):
             f'Analyze the following transcript of a conversation with a client named {name}. '
             f'Based on their stories and experiences, infer {name}\'s dominant cognitive functions (e.g., Te, Ti, Se, Si, Fe, Fi, Ne, Ni). '
             f'Determine {name}\'s MBTI personality type, including their dominant, auxiliary, tertiary, and inferior cognitive functions. '
+            f'Determine {name}\'s MBTI personality type and your confidence level in percentage.'
             f'Provide a comprehensive analysis, referencing specific parts of the conversation that support your conclusions. '
             f'Present your findings in the following format exactly:\n\n'
             f'MBTI Type: [4-letter MBTI Type]\n'
+            f'Confidence: [Your confidence level as a percentage]\n'
             f'Explanation:\n[Your detailed explanation here]\n\n'
             f'Make sure to start with "MBTI Type:" and include all sections as specified.'
         )
@@ -863,11 +1025,15 @@ def analyze_responses(conversation, name):
         return mbti_result
     except Exception as e:
         logging.error(f"Error analyzing responses: {e}")
-        return {'type': 'Unknown', 'explanation': 'An error occurred during analysis.'}
+        return {
+            'type': 'Unknown',
+            'confidence': 0.0,
+            'explanation': 'An error occurred during analysis.'}
 
 def parse_detailed_analysis(analysis_text):
     mbti_type = 'Unknown'
     explanation = ''
+    confidence = 0.0
 
     # Use regex to extract information
     mbti_type_match = re.search(r'MBTI Type:\s*([A-Z]{4})', analysis_text)
@@ -879,9 +1045,16 @@ def parse_detailed_analysis(analysis_text):
     if explanation_match:
         explanation = explanation_match.group(1).strip()
 
+    # Extract confidence if provided
+    confidence_match = re.search(r'Confidence:\s*(\d+)%', analysis_text)
+    if confidence_match:
+        confidence = float(confidence_match.group(1)) if confidence_match else 0.0
+
+
     return {
         'type': mbti_type,
-        'explanation': explanation
+        'explanation': explanation,
+        'confidence': confidence
     }
 
 
@@ -901,6 +1074,182 @@ def is_safe_url(target):
     )
 
 
+#COMBINED MBTI###
+
+def aggregate_mbti_analyses(user_id):
+    analyses = UserMBTIAnalysis.query.filter_by(user_id=user_id).all()
+    if not analyses:
+        return None
+
+    # Count occurrences of each MBTI type
+    type_counts = {}
+    for analysis in analyses:
+        mbti_type = analysis.mbti_type
+        if mbti_type in type_counts:
+            type_counts[mbti_type] += 1
+        else:
+            type_counts[mbti_type] = 1
+
+    # Determine the most frequent MBTI type
+    most_common_type = max(type_counts, key=type_counts.get)
+    total_analyses = len(analyses)
+    confidence = (type_counts[most_common_type] / total_analyses) * 100
+
+    # Compile explanations and functions
+    explanations = [analysis.explanation for analysis in analyses if analysis.mbti_type == most_common_type]
+    combined_explanation = '\n\n'.join(explanations)
+
+    # For simplicity, take the functions from the most recent analysis of the most common type
+    recent_analysis = UserMBTIAnalysis.query.filter_by(user_id=user_id, mbti_type=most_common_type).order_by(UserMBTIAnalysis.timestamp.desc()).first()
+
+    aggregated_result = {
+        'type': most_common_type,
+        'confidence': round(confidence, 2),
+        'explanation': combined_explanation,
+    }
+
+    return aggregated_result
+
+def get_user_past_conversations(user_id):
+    # Fetch all past conversations for the user
+    past_conversations = UserConversation.query.filter_by(user_id=user_id).order_by(UserConversation.timestamp).all()
+    return past_conversations
+"""
+def compile_past_conversations(user, past_conversations):
+    transcript = ''
+    for conv in past_conversations:
+        # Load the conversation from JSON
+        conversation = json.loads(conv.conversation)
+        
+        # Build the conversation transcript
+        transcript += f"Session on {conv.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        for msg in conversation:
+            role = 'Psychologist' if msg['role'] == 'assistant' else user.name
+            transcript += f"{role}: {msg['content']}\n"
+        transcript += '\n'
+    return transcript
+"""
+
+def summarize_conversation(conversation_text):
+    summary_prompt = [
+        {'role': 'system', 'content': 'You are a helpful assistant that summarizes conversations succinctly.'},
+        {'role': 'user', 'content': f'Please provide a concise summary of the following conversation:\n\n{conversation_text}'}
+    ]
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4o',
+            messages=summary_prompt,
+            max_tokens=500,
+            temperature=0.5,
+        )
+        summary = response.choices[0].message.content.strip()
+        return summary
+    except Exception as e:
+        logging.error(f"Error summarizing conversation: {e}")
+        return None
+
+def compile_past_conversations(user, past_conversations):
+    transcript = ''
+    total_tokens = 0
+    max_tokens = 6000  # Adjust as needed, keeping in mind the model's limit and desired response length
+
+    for conv in past_conversations:
+        conversation_text = f"Session on {conv.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
+        conversation = json.loads(conv.conversation)
+        for msg in conversation:
+            role = 'Psychologist' if msg['role'] == 'assistant' else 'You'
+            conversation_text += f"{role}: {msg['content']}\n"
+        conversation_text += '\n'
+
+        tokens = estimate_tokens(conversation_text)
+        if total_tokens + tokens > max_tokens:
+            # Need to summarize
+            summary = summarize_conversation(conversation_text)
+            if summary:
+                summary_text = f"Summary of session on {conv.timestamp.strftime('%Y-%m-%d %H:%M:%S')}:\n{summary}\n\n"
+                transcript += summary_text
+                total_tokens += estimate_tokens(summary_text)
+            else:
+                # If summarization fails, skip this conversation
+                continue
+        else:
+            transcript += conversation_text
+            total_tokens += tokens
+
+    return transcript
+
+def generate_combined_analysis(user, transcript):
+    analysis_prompt = [
+        {
+            'role': 'system',
+            'content': (
+                f'You are an expert psychologist specializing in MBTI personality assessments and cognitive functions. '
+                f'Provide a detailed analysis using cognitive functions, referencing specific aspects and timestamps from the following transcript with {user} to support your conclusions. '
+                f'Make sure your analysis is structured, clear, and uses headings as indicated. '
+                f'Based on the following transcript of multiple sessions with {user}, please provide a comprehensive MBTI analysis '
+                f'Provide your analysis in the following format:\n\n'
+                f'1. MBTI Type:\n'
+                f'Clearly state the MBTI type you believe {user} to be.\n\n'
+                f'2. Confidence Level:\n'
+                f'Include your level of confidence as a percentage.\n\n'
+                f'3. Cognitive Function Analysis:\n'
+            )
+        },
+        {
+            'role': 'user',
+            'content': transcript
+        }
+    ]
+    try:
+        response = client.chat.completions.create(
+            model='gpt-4',
+            messages=analysis_prompt,
+            max_tokens=5000,  # Adjust as needed
+            temperature=0.7,
+        )
+        analysis = response.choices[0].message.content.strip()
+        return analysis
+    except Exception as e:
+        logging.error(f"Error generating combined analysis: {e}")
+        return None
+
+@app.route('/get_combined_report_data')
+@requires_premium
+def get_combined_report_data():
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    past_conversations = get_user_past_conversations(user.id)
+
+    if not past_conversations:
+        return jsonify({'error': 'No past conversations found. Please take the adaptive test first.'}), 400
+
+    # Compile the transcript
+    transcript = compile_past_conversations(user, past_conversations)
+
+    # Generate the combined analysis
+    combined_analysis = generate_combined_analysis(user, transcript)
+
+    if not combined_analysis:
+        return jsonify({'error': 'An error occurred while generating the combined analysis.'}), 500
+
+    # Prepare the data to send back
+    data = {
+        'combined_analysis': combined_analysis,
+        'past_conversations': [
+            {
+                'timestamp': conv.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                'conversation': json.loads(conv.conversation)
+            }
+            for conv in past_conversations
+        ]
+    }
+
+    return jsonify(data)
+
+@app.route('/combined_report')
+@requires_premium
+def combined_report():
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    return render_template('combined_report.html', user=user)
 
 
 #LOGIN
@@ -1002,7 +1351,7 @@ def create_checkout_session():
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price': 'price_1QAMcyKjJ23rv2vUAirrAfeH',  # Replace with your actual Price ID
+                'price': 'price_1QAmJBKjJ23rv2vUdLNtT9kq',  # Replace with your actual Price ID
                 'quantity': 1,
             }],
             mode='payment',

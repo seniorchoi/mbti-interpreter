@@ -13,6 +13,7 @@ body {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     margin-top: 2rem;
     margin-bottom: 2rem;
+    min-height: calc(90vh - 160px);
 }
 
 h1 {
@@ -79,6 +80,11 @@ label {
     font-size: 16px;
 }
 
+.btn-primary {
+    min-width: 240px;
+}
+
+
 .btn:hover {
     background-color: #3b6fc9;
 }
@@ -99,7 +105,7 @@ label {
 }
 
 .visitor-count {
-    margin-top: 40px;
+    margin-bottom: 40px;
     font-size: 14px;
     color: #777;
 }
@@ -126,6 +132,7 @@ label {
         padding-left: 0;
         padding-right: 0;
     }
+    
 }
 
 
@@ -180,6 +187,7 @@ textarea {
 
 .jumbotron {
     padding-bottom: 0px;
+    margin-top: 5px;
 }
 
 #drop-area {
@@ -188,6 +196,7 @@ textarea {
     max-width: 500px;
     margin: 0 auto;
     min-height: 300px;
+    padding: 0px;
 }
 
 #drop-area.dragover {
@@ -201,10 +210,10 @@ textarea {
 }
 .message {
     display: flex;
-    margin-bottom: 15px;
+    margin-bottom: 2px;
 }
 .message.user {
-    color: #5a5e61;
+    color: #43464b;
 }
 
 .message .content {
@@ -217,8 +226,7 @@ textarea {
 }
 
 #conversation {
-    max-height: 500px; /* Adjust this value as needed */
-    overflow-y: auto;
+
 }
 
 
@@ -227,8 +235,30 @@ textarea {
     color: #888;
     font-size: 1.5rem;
     margin-right: 8px;
-  }
+}
   
-  .discounted-price {
+.discounted-price {
     font-size: 2rem;
-  }
+}
+
+#checkout-button {
+      min-width: 300px;
+}
+
+#upgrade-card {
+      max-width: 600px;
+      
+}
+
+.footer-container {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 0rem;
+    margin-bottom: 2rem;
+}
+
+.spinner-text {
+    margin-top: 50px;
+}

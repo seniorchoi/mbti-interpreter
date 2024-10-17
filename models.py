@@ -1,5 +1,7 @@
 from app import db
 from datetime import datetime
+import uuid
+import json
 
 class Visitor(db.Model):
     __tablename__ = 'visitor'
@@ -33,3 +35,34 @@ class User(db.Model):
     stripe_customer_id = db.Column(db.String(100))
     stripe_subscription_id = db.Column(db.String(100))
     mbti_type = db.Column(db.String(10))
+
+class UserConversation(db.Model):
+    __tablename__ = 'user_conversations'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    session_id = db.Column(db.String(36), nullable=False, default=lambda: str(uuid.uuid4()))
+    conversation = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('conversations', lazy=True))
+
+class UserMBTIAnalysis(db.Model):
+    __tablename__ = 'user_mbti_analyses'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    session_id = db.Column(db.String(36), nullable=False)
+    mbti_type = db.Column(db.String(10), nullable=False)
+    explanation = db.Column(db.Text)
+    confidence = db.Column(db.Float)  # Store confidence level (e.g., 85.0 for 85%)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('mbti_analyses', lazy='dynamic'))
+
+class UserTopic(db.Model):
+    __tablename__ = 'user_topics'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    topic = db.Column(db.String(255), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('user_topics', lazy='dynamic'))
