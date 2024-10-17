@@ -120,6 +120,7 @@ label {
         padding-left: 10px;
         padding-right: 10px;
     }
+
 }
 
 /* Responsive adjustments */
@@ -132,7 +133,7 @@ label {
         padding-left: 0;
         padding-right: 0;
     }
-    
+
 }
 
 
@@ -242,7 +243,7 @@ textarea {
 }
 
 #checkout-button {
-      min-width: 300px;
+    width: 260px;
 }
 
 #upgrade-card {
