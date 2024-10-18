@@ -34,7 +34,7 @@
                 >{{ user_message }}</textarea>
             </div>
             <div class="text-center">
-                <button type="submit" class="btn btn-primary">Interpret Message</button>
+                <button type="submit" class="btn btn-primary" id="interpreter-button">Interpret Message</button>
             </div>
             <div class="text-center">
             <span id="loading-message" class="loading-message ml-2" style="display: none;">
@@ -61,6 +61,10 @@
 
         form.addEventListener('submit', function() {
             loadingMessage.style.display = 'inline-block';
+            mixpanel.track("Interpreter Submit", {
+            "User ID": userId || "Anonymous",
+            "Premium": isPremium
+            });
         });
         console.log('Unique Visitors: {{ unique_visitor_count }}');
     </script>

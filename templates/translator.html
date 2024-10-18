@@ -83,6 +83,10 @@
 
         form.addEventListener('submit', function() {
             loadingMessage.style.display = 'inline-block';
+            mixpanel.track("Translator Submit", {
+            "User ID": userId || "Anonymous",
+            "Premium": isPremium
+            });
         });
         console.log('Unique Visitors: {{ unique_visitor_count }}');
     </script>

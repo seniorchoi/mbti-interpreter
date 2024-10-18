@@ -22,6 +22,7 @@ from datetime import datetime
 import json
 import tiktoken
 from difflib import SequenceMatcher
+from mixpanel import Mixpanel
 
 
 load_dotenv()
@@ -49,6 +50,7 @@ migrate = Migrate(app, db)
 
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+mp = Mixpanel("6fa5905b9195c203cb2dde06935627eb")
 
 #app.secret_key = os.environ.get('SECRET_KEY')
 
@@ -1112,7 +1114,7 @@ def aggregate_mbti_analyses(user_id):
 
 def get_user_past_conversations(user_id):
     # Fetch all past conversations for the user
-    past_conversations = UserConversation.query.filter_by(user_id=user_id).order_by(UserConversation.timestamp).all()
+    past_conversations = UserConversation.query.filter_by(user_id=user_id).order_by(UserConversation.timestamp.desc()).limit(10).all()
     return past_conversations
 """
 def compile_past_conversations(user, past_conversations):
@@ -1151,7 +1153,7 @@ def summarize_conversation(conversation_text):
 def compile_past_conversations(user, past_conversations):
     transcript = ''
     total_tokens = 0
-    max_tokens = 6000  # Adjust as needed, keeping in mind the model's limit and desired response length
+    max_tokens = 4000  # Adjust as needed, keeping in mind the model's limit and desired response length
 
     for conv in past_conversations:
         conversation_text = f"Session on {conv.timestamp.strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -1204,7 +1206,7 @@ def generate_combined_analysis(user, transcript):
         response = client.chat.completions.create(
             model='gpt-4',
             messages=analysis_prompt,
-            max_tokens=5000,  # Adjust as needed
+            max_tokens=4000,  # Adjust as needed
             temperature=0.7,
         )
         analysis = response.choices[0].message.content.strip()
@@ -1286,12 +1288,23 @@ def callback_handling():
         )
         db.session.add(user)
         db.session.commit()
+        # Track sign-up event in Mixpanel
+        mp.track(user.id, 'User Sign Up', {
+        'Email': user.email
+        })
+        
     else:
         # Existing user, check if insights is None
         if user.insights is None:
             user.insights = 50  # Assign default insights value
             db.session.commit()
     
+        # Track login event in Mixpanel
+        mp.track(user.id, 'User Log In', {
+        'Email': user.email,
+        'Premium': user.is_premium
+        })
+
 
     # Redirect back to the original page
     next_url = session.pop('next_url', None)
@@ -1302,6 +1315,10 @@ def callback_handling():
 
 @app.route('/logout')
 def logout():
+    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
+    mp.track(user.id, 'User Log Out', {
+        'Email': user.email
+    })
     # Clear session data
     session.clear()
 
