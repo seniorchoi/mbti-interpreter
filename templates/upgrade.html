@@ -7,7 +7,7 @@
     <!-- Hero Section -->
     <div class="jumbotron text-center bg-transparent">
         <h1 class="display-4">Upgrade to Premium</h1>
-        <p class="lead">Access Premium Features</p>
+        <p class="lead">Unlock exclusive features and gain deeper insights.</p>
         <hr class="my-4">
     </div>
 
@@ -15,7 +15,7 @@
     <!-- Pricing Card -->
     <div class="card mb-5 shadow-sm mx-auto" id="upgrade-card">
         <div class="card-header text-center">
-            <h4 class="my-0 font-weight-normal">Premium</h4>
+            <h4 class="my-0 font-weight-normal">Premium Plan</h4>
         </div>
         <div class="card-body">
             <h1 class="card-title pricing-card-title text-center">
@@ -26,11 +26,11 @@
             </h1>
               <h4 class="text-center">One time payment</h4>
               <ul class="list-unstyled mt-3 mb-4 text-center">
-                <li>Limited Time Offer</li>
+                <li>Unlimited insights</li>
                 <li>Access to Exclusive Features</li>
                 <li>Monthly Analysis Reports</li>
                 <li>MBTI Psychologist</li>
-                <li>Image Guesser</li>
+                <li>Combined Reports</li>
             </ul>
             <!-- Stripe Checkout Button -->
             <div class="text-center">
@@ -46,54 +46,145 @@
         </div>
     </div>
 
+
     <!-- Benefits Section -->
-    <div class="row">
+    <div class="row mt-5">
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
+            <div class="card mb-4 shadow-sm h-100">
                 <div class="card-body text-center">
-                    <i class="fas fa-unlock-alt fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Access to Premium Features</h5>
-                    <p class="card-text">Enjoy access to premium features without any restrictions.</p>
+                    <img src="{{ url_for('static', filename='unlock.svg') }}" alt="Combined Report" class="mb-3" style="height: 100px;">
+                    <h5 class="card-title">Unlimited Insights</h5>
+                    <p class="card-text">Unlock unlimited access to all premium features, including the Image Guesser. Dive deeper into self-discovery without any limitations.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
+            <div class="card mb-4 shadow-sm h-100">
                 <div class="card-body text-center">
-                    <i class="fas fa-headset fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Priority Support</h5>
-                    <p class="card-text">Get access to priority customer support for any queries or issues.</p>
+                    <img src="{{ url_for('static', filename='mbti_psychologist.png') }}" alt="MBTI Psychologist" class="mb-3" style="height: 100px;">
+                    <h5 class="card-title">MBTI Psychologist</h5>
+                    <p class="card-text">Embark on a personalized journey. Uncover deep insights about your personality through interactive sessions tailored just for you.</p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
+            <div class="card mb-4 shadow-sm h-100">
                 <div class="card-body text-center">
-                    <i class="fas fa-star fa-3x mb-3 text-primary"></i>
-                    <h5 class="card-title">Monthly Reports</h5>
-                    <p class="card-text">Access to monthly reports enhance your experience.</p>
+                    <img src="{{ url_for('static', filename='combined_report.png') }}" alt="Combined Report" class="mb-3" style="height: 100px;">
+                    <h5 class="card-title">Combined Reports</h5>
+                    <p class="card-text">Receive a comprehensive report that combines all your analyses into one. Gain a whole understanding of your MBTI type with actionable insights.</p>
                 </div>
             </div>
         </div>
     </div>
-
 
     <!-- Testimonials Section -->
-    <div class="row">
-        <div class="col-md-6">
-            <blockquote class="blockquote">
-                <p class="mb-0">"Upgrading to premium has transformed my understanding of MBTI. The unlimited interpretations are invaluable!"</p>
-                
-            </blockquote>
+    <div class="mt-5">
+        <h3 class="text-center mb-4">What Our Users Say</h3>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="testimonial bg-light p-4 mb-4">
+                    <p class="mb-2">"This is honestly very cool, thank you so much for taking the time to develop something like this man."</p>
+                    <p class="text-right mb-0"><strong>- u/Persimmon from r/mbti</strong></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="testimonial bg-light p-4 mb-4">
+                    <p class="mb-2">"This is peak."</p>
+                    <p class="text-right mb-0"><strong>- u/DuckDuel from r/mbtimemes</strong></p>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6">
-            <blockquote class="blockquote">
-                <p class="mb-0">"The priority support and exclusive features make the premium plan worth every penny."</p>
-                
-            </blockquote>
+        <div class="text-center mt-3">
+            <img src="{{ url_for('static', filename='money_back_guarantee.png') }}" alt="Money-Back Guarantee" style="height: 150px;">
+            <p class="mt-2">14-Day Money-Back Guarantee</p>
         </div>
     </div>
-</div>
+
+    <div class="table-responsive mt-5">
+        <table class="table table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Features</th>
+                    <th>Free Version</th>
+                    <th>Premium Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>MBTI Interpreter</td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>MBTI Translator</td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>MBTI Guesser</td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>Unlimited Insights</td>
+                    <td><i class="fas fa-times text-danger"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>MBTI Psychologist</td>
+                    <td><i class="fas fa-times text-danger"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>Combined Report</td>
+                    <td><i class="fas fa-times text-danger"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>Image Guesser</td>
+                    <td><i class="fas fa-times text-danger"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+                <tr>
+                    <td>Priority Support</td>
+                    <td><i class="fas fa-times text-danger"></i></td>
+                    <td><i class="fas fa-check text-success"></i></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="mt-5">
+        <h3 class="text-center mb-4">Frequently Asked Questions</h3>
+        <div class="faq">
+            <!-- FAQ Item 1 -->
+            <div class="faq-item mb-4">
+                <h5>What is included in the Premium Plan?</h5>
+                <p>The Premium Plan gives you unlimited access to all our exclusive features, including the MBTI Psychologist, Combined Report, Unlimited Insights, Image Guesser, Monthly Analysis Reports, and Priority Support.</p>
+            </div>
+            <!-- FAQ Item 2 -->
+            <div class="faq-item mb-4">
+                <h5>Is this a one-time payment or a subscription?</h5>
+                <p>It's a one-time payment of $9. There are no recurring fees or hidden charges. You get lifetime access to all premium features without any additional costs.</p>
+            </div>
+            <!-- FAQ Item 3 -->
+            <div class="faq-item mb-4">
+                <h5>How secure is my payment information?</h5>
+                <p>Your payment information is processed securely through Stripe. We do not store any of your payment details on our servers.</p>
+            </div>
+            <!-- FAQ Item 4 -->
+            <div class="faq-item mb-4">
+                <h5>Can I get a refund if I'm not satisfied?</h5>
+                <p>Yes, we offer a 14-day money-back guarantee. If you're not completely satisfied, contact us within 14 days for a full refund.</p>
+            </div>
+            <!-- FAQ Item 5 -->
+            <div class="faq-item mb-4">
+                <h5>How do I access the premium features after upgrading?</h5>
+                <p>Once your payment is processed, your account will be automatically upgraded. Simply log in, and you'll have instant access to all premium features.</p>
+            </div>
+        </div>
+    </div>
+
 
 <!-- Stripe Integration Script -->
 <script src="https://js.stripe.com/v3/"></script>

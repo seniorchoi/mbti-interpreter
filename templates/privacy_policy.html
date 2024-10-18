@@ -1,78 +1,107 @@
-<!-- File: templates/privacy_policy.html -->
-
 {% extends "base.html" %}
 
 {% block title %}Privacy Policy{% endblock %}
 
 {% block content %}
 <div class="container mt-2">
-    <h1 class="mb-4">Privacy Policy</h1>
-    <p><strong>Last Updated:</strong> October 12, 2024</p>
+    <!-- Hero Section -->
+    <div class="jumbotron text-center text-white">
+        <h1 class="display-4">Privacy Policy</h1>
+        <p class="lead">Your privacy is critically important to us.</p>
+    </div>
 
-    <p>Welcome to <strong>MBTI Oracle</strong>. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services.</p>
+    <!-- Table of Contents -->
+    <div class="mt-4">
+        <h2 class="mb-3">Table of Contents</h2>
+        <ul class="list-unstyled">
+            <li><a href="#introduction">1. Introduction</a></li>
+            <li><a href="#information-we-collect">2. Information We Collect</a></li>
+            <li><a href="#how-we-use-information">3. How We Use Your Information</a></li>
+            <li><a href="#disclosure-of-information">4. Disclosure of Your Information</a></li>
+            <li><a href="#security">5. Security of Your Information</a></li>
+            <li><a href="#your-rights">6. Your Rights and Choices</a></li>
+            <li><a href="#cookies">7. Cookies and Tracking Technologies</a></li>
+            <li><a href="#children">8. Children's Privacy</a></li>
+            <li><a href="#international-transfers">9. International Data Transfers</a></li>
+            <li><a href="#changes">10. Changes to This Privacy Policy</a></li>
+            <li><a href="#contact">11. Contact Us</a></li>
+        </ul>
+    </div>
 
-    <h2>1. Introduction</h2>
-    <p>By accessing or using our Service, you acknowledge that you have read, understood, and agree to be bound by this Privacy Policy.</p>
+    <!-- Content Sections -->
+    <div class="mt-5">
+        <p><strong>Last Updated:</strong> October 12, 2024</p>
 
-    <h2>2. Information We Collect</h2>
-    <h3>2.1. Personal Data</h3>
-    <p>We may ask you to provide certain personally identifiable information, including but not limited to:</p>
-    <ul>
-        <li>Email address</li>
-        <li>Name</li>
-        <li>Payment information (processed securely via Stripe)</li>
-    </ul>
+        <p>Welcome to <strong>MBTI Oracle</strong>. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website and services.</p>
 
-    <h3>2.2. Usage Data</h3>
-    <p>We may collect information on how the Service is accessed and used, such as your computer's Internet Protocol address (IP address), browser type, pages visited, and the date and time of your visit.</p>
+        <hr>
 
-    <h2>3. How We Use Your Information</h2>
-    <p>We use the collected data for various purposes, including:</p>
-    <ul>
-        <li>To provide and maintain our Service</li>
-        <li>To manage your account</li>
-        <li>To process transactions</li>
-        <li>To contact you with updates and promotional materials</li>
-        <li>To analyze usage and improve our Service</li>
-    </ul>
+        <h2 id="introduction">1. Introduction</h2>
+        <p>By accessing or using our Service, you acknowledge that you have read, understood, and agree to be bound by this Privacy Policy.</p>
 
-    <h2>4. Disclosure of Your Information</h2>
-    <h3>4.1. Service Providers</h3>
-    <p>We may employ third-party companies to facilitate our Service, provide the Service on our behalf, or assist us in analyzing how our Service is used. These third parties have access to your personal information only to perform these tasks on our behalf.</p>
+        <h2 id="information-we-collect">2. Information We Collect</h2>
 
-    <h3>4.2. Legal Requirements</h3>
-    <p>We may disclose your personal information if required to do so by law or in response to valid requests by public authorities.</p>
+        <h3>2.1. Personal Data</h3>
+        <p>We may ask you to provide certain personally identifiable information, including but not limited to:</p>
+        <ul>
+            <li>Email address</li>
+            <li>Name</li>
+            <li>Payment information (processed securely via Stripe)</li>
+        </ul>
 
-    <h2>5. Security of Your Information</h2>
-    <p>The security of your data is important to us. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.</p>
+        <h3>2.2. Usage Data</h3>
+        <p>We may collect information on how the Service is accessed and used, such as your computer's Internet Protocol address (IP address), browser type, pages visited, and the date and time of your visit.</p>
 
-    <h2>6. Your Rights and Choices</h2>
-    <h3>6.1. Access and Update</h3>
-    <p>You can access and update your personal information by logging into your account settings.</p>
+        <h2 id="how-we-use-information">3. How We Use Your Information</h2>
+        <p>We use the collected data for various purposes, including:</p>
+        <ul>
+            <li>To provide and maintain our Service</li>
+            <li>To manage your account</li>
+            <li>To process transactions</li>
+            <li>To contact you with updates and promotional materials</li>
+            <li>To analyze usage and improve our Service</li>
+        </ul>
 
-    <h3>6.2. Opt-Out</h3>
-    <p>You may opt out of receiving promotional communications by following the unsubscribe link in those emails or contacting us directly.</p>
+        <h2 id="disclosure-of-information">4. Disclosure of Your Information</h2>
 
-    <h3>6.3. Data Deletion</h3>
-    <p>You can request deletion of your personal data by contacting us at <a href="mailto:assistant.count@aiflowmail.com">assistant.count@aiflowmail.com</a>.</p>
+        <h3>4.1. Service Providers</h3>
+        <p>We may employ third-party companies to facilitate our Service, provide the Service on our behalf, or assist us in analyzing how our Service is used. These third parties have access to your personal information only to perform these tasks on our behalf.</p>
 
-    <h2>7. Cookies and Tracking Technologies</h2>
-    <p>We use cookies and similar tracking technologies to track activity on our Service and hold certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.</p>
+        <h3>4.2. Legal Requirements</h3>
+        <p>We may disclose your personal information if required to do so by law or in response to valid requests by public authorities.</p>
 
-    <h2>8. Children's Privacy</h2>
-    <p>Our Service is not intended for individuals under the age of 13. We do not knowingly collect personal information from children under 13.</p>
+        <h2 id="security">5. Security of Your Information</h2>
+        <p>The security of your data is important to us. While we strive to use commercially acceptable means to protect your personal information, we cannot guarantee its absolute security.</p>
 
-    <h2>9. International Data Transfers</h2>
-    <p>Your information may be transferred to and maintained on computers located outside of your jurisdiction where data protection laws may differ.</p>
+        <h2 id="your-rights">6. Your Rights and Choices</h2>
 
-    <h2>10. Changes to This Privacy Policy</h2>
-    <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page with an updated "Last Updated" date.</p>
+        <h3>6.1. Access and Update</h3>
+        <p>You can access and update your personal information by logging into your account settings.</p>
 
-    <h2>11. Contact Us</h2>
-    <p>If you have any questions about this Privacy Policy, please contact us:</p>
-    <ul>
-        <li>Email: <a href="mailto:assistant.count@aiflowmail.com">assistant.count@aiflowmail.com</a></li>
-        <li>Address: 201 Old Main, University Park, PA 16802</li>
-    </ul>
+        <h3>6.2. Opt-Out</h3>
+        <p>You may opt out of receiving promotional communications by following the unsubscribe link in those emails or contacting us directly.</p>
+
+        <h3>6.3. Data Deletion</h3>
+        <p>You can request deletion of your personal data by contacting us at Email: assistant.count@aiflowmail.com</a>.</p>
+
+        <h2 id="cookies">7. Cookies and Tracking Technologies</h2>
+        <p>We use cookies and similar tracking technologies to track activity on our Service and hold certain information. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent.</p>
+
+        <h2 id="children">8. Children's Privacy</h2>
+        <p>Our Service is not intended for individuals under the age of 13. We do not knowingly collect personal information from children under 13.</p>
+
+        <h2 id="international-transfers">9. International Data Transfers</h2>
+        <p>Your information may be transferred to and maintained on computers located outside of your jurisdiction where data protection laws may differ.</p>
+
+        <h2 id="changes">10. Changes to This Privacy Policy</h2>
+        <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page with an updated "Last Updated" date.</p>
+
+        <h2 id="contact">11. Contact Us</h2>
+        <p>If you have any questions about this Privacy Policy, please contact us:</p>
+        <ul>
+            <li>Email: Email: assistant.count@aiflowmail.com</a></li>
+            <li>Address: 201 Old Main, University Park, PA 16802</li>
+        </ul>
+    </div>
 </div>
 {% endblock %}

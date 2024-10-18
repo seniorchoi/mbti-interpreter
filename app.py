@@ -573,7 +573,7 @@ def guesser():
 
 
 @app.route('/vision', methods=['GET', 'POST'])
-@requires_auth
+@requires_premium
 def vision():
     from forms import ImageUploadForm
     form = ImageUploadForm()
@@ -1338,6 +1338,9 @@ def logout():
 @app.route('/upgrade')
 @requires_auth
 def upgrade():
+    if 'profile' not in session:
+        # Redirect to login page and pass the next parameter
+        return redirect(url_for('login', next=request.url))
     user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
     return render_template(
         'upgrade.html',
@@ -1465,8 +1468,8 @@ def purchase_insights():
         user=user,        
         stripe_publishable_key=os.environ.get('STRIPE_PUBLISHABLE_KEY'),
         basic_price=2,
-        standard_price=6,
-        premium_price=8,
+        standard_price=5,
+        premium_price=6,
         basic_insights=50,
         standard_insights=120,
         premium_insights=200,
@@ -1507,11 +1510,11 @@ def create_one_time_session():
                 'insights': 50
             },
             'standard': {
-                'price_id': 'price_1Q99ZSKjJ23rv2vUmajrrkeK',  # Replace with your actual Price ID
+                'price_id': 'price_1QBKdrKjJ23rv2vUdQhs9IN2',  # Replace with your actual Price ID
                 'insights': 120
             },
             'premium': {
-                'price_id': 'price_1Q99MHKjJ23rv2vU52gnja0g',  # Replace with your actual Price ID
+                'price_id': 'price_1Q99ZSKjJ23rv2vUmajrrkeK',  # Replace with your actual Price ID
                 'insights': 200
             }
         }
@@ -1559,7 +1562,7 @@ def one_time_success():
             if user:
                 # Define insights mapping
                 insights_mapping = {
-                    'basic': 20,
+                    'basic': 50,
                     'standard': 120,
                     'premium': 200
                 }
@@ -1588,15 +1591,13 @@ def profile():
 
 @app.route('/privacy-policy')
 def privacy_policy():
-    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
-    return render_template('privacy_policy.html', user=user)
+    return render_template('privacy_policy.html')
 
 
 # Route for Terms of Service
 @app.route('/terms-of-service')
 def terms_of_service():
-    user = User.query.filter_by(auth0_id=session['profile']['user_id']).first()
-    return render_template('terms_of_service.html', user=user)
+    return render_template('terms_of_service.html')
 
 
 

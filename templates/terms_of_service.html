@@ -1,77 +1,108 @@
-<!-- File: templates/terms_of_service.html -->
-
 {% extends "base.html" %}
 
 {% block title %}Terms of Service{% endblock %}
 
 {% block content %}
 <div class="container mt-2">
-    <h1 class="mb-4">Terms of Service</h1>
-    <p><strong>Last Updated:</strong> October 12, 2024</p>
+    <!-- Hero Section -->
+    <div class="jumbotron text-center text-white">
+        <h1 class="display-4">Terms of Service</h1>
+        <p class="lead">Please read these terms carefully before using our service.</p>
+    </div>
 
-    <p>Welcome to <strong>MBTI Oracle</strong>. These Terms of Service ("Terms") govern your use of our website and services ("Service"). By accessing or using the Service, you agree to be bound by these Terms.</p>
+    <!-- Table of Contents -->
+    <div class="mt-4">
+        <h2 class="mb-3">Table of Contents</h2>
+        <ul class="list-unstyled">
+            <li><a href="#acceptance">1. Acceptance of Terms</a></li>
+            <li><a href="#eligibility">2. Eligibility</a></li>
+            <li><a href="#user-accounts">3. User Accounts</a></li>
+            <li><a href="#payments">4. Subscription and Payments</a></li>
+            <li><a href="#conduct">5. User Conduct</a></li>
+            <li><a href="#intellectual-property">6. Intellectual Property Rights</a></li>
+            <li><a href="#disclaimers">7. Disclaimers</a></li>
+            <li><a href="#limitation">8. Limitation of Liability</a></li>
+            <li><a href="#indemnification">9. Indemnification</a></li>
+            <li><a href="#modifications">10. Modifications to Service</a></li>
+            <li><a href="#governing-law">11. Governing Law</a></li>
+            <li><a href="#dispute">12. Dispute Resolution</a></li>
+            <li><a href="#changes">13. Changes to Terms</a></li>
+            <li><a href="#contact">14. Contact Us</a></li>
+        </ul>
+    </div>
 
-    <h2>1. Acceptance of Terms</h2>
-    <p>By creating an account or using our Service, you agree to these Terms and our Privacy Policy. If you do not agree, you may not use the Service.</p>
+    <!-- Content Sections -->
+    <div class="mt-5">
+        <p><strong>Last Updated:</strong> October 12, 2024</p>
 
-    <h2>2. Eligibility</h2>
-    <p>You must be at least 13 years old to use our Service. By using the Service, you represent that you meet this requirement.</p>
+        <p>Welcome to <strong>MBTI Oracle</strong>. These Terms of Service ("Terms") govern your use of our website and services ("Service"). By accessing or using the Service, you agree to be bound by these Terms.</p>
 
-    <h2>3. User Accounts</h2>
-    <h3>3.1. Account Creation</h3>
-    <p>You are required to provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your account credentials.</p>
+        <hr>
 
-    <h3>3.2. Account Termination</h3>
-    <p>We reserve the right to suspend or terminate your account at our discretion for conduct that we believe violates these Terms.</p>
+        <h2 id="acceptance">1. Acceptance of Terms</h2>
+        <p>By creating an account or using our Service, you agree to these Terms and our Privacy Policy. If you do not agree, you may not use the Service.</p>
 
-    <h2>4. Subscription and Payments</h2>
-    <h3>4.1. Premium Features</h3>
-    <p>Access to certain features requires a paid subscription. By subscribing, you authorize us to charge your payment method for applicable fees.</p>
+        <h2 id="eligibility">2. Eligibility</h2>
+        <p>You must be at least 13 years old to use our Service. By using the Service, you represent that you meet this requirement.</p>
 
-    <h3>4.2. Billing</h3>
-    <p>All fees are exclusive of taxes. You are responsible for paying any applicable taxes associated with your use of the Service.</p>
+        <h2 id="user-accounts">3. User Accounts</h2>
 
-    <h3>4.3. Cancellation</h3>
-    <p>You may cancel your subscription at any time through your account settings. Cancellation will apply to the next billing cycle.</p>
+        <h3>3.1. Account Creation</h3>
+        <p>You are required to provide accurate information when creating an account. You are responsible for maintaining the confidentiality of your account credentials.</p>
 
-    <h2>5. User Conduct</h2>
-    <p>You agree not to engage in any of the following prohibited activities:</p>
-    <ul>
-        <li>Violating any applicable laws or regulations</li>
-        <li>Infringing upon the rights of others</li>
-        <li>Uploading harmful or malicious content</li>
-        <li>Impersonating any person or entity</li>
-    </ul>
+        <h3>3.2. Account Termination</h3>
+        <p>We reserve the right to suspend or terminate your account at our discretion for conduct that we believe violates these Terms.</p>
 
-    <h2>6. Intellectual Property Rights</h2>
-    <p>All content and materials on the Service are the property of MBTI Oracle and are protected by intellectual property laws.</p>
+        <h2 id="payments">4. Subscription and Payments</h2>
 
-    <h2>7. Disclaimers</h2>
-    <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.</p>
+        <h3>4.1. Premium Features</h3>
+        <p>Access to certain features requires a paid subscription. By subscribing, you authorize us to charge your payment method for applicable fees.</p>
 
-    <h2>8. Limitation of Liability</h2>
-    <p>In no event shall MBTI Oracle be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.</p>
+        <h3>4.2. Billing</h3>
+        <p>All fees are exclusive of taxes. You are responsible for paying any applicable taxes associated with your use of the Service.</p>
 
-    <h2>9. Indemnification</h2>
-    <p>You agree to indemnify and hold harmless MBTI Oracle from any claims arising out of your violation of these Terms.</p>
+        <h3>4.3. Cancellation</h3>
+        <p>You may cancel your subscription at any time through your account settings. Cancellation will apply to the next billing cycle.</p>
 
-    <h2>10. Modifications to Service</h2>
-    <p>We reserve the right to modify or discontinue the Service at any time without notice.</p>
+        <h2 id="conduct">5. User Conduct</h2>
+        <p>You agree not to engage in any of the following prohibited activities:</p>
+        <ul>
+            <li>Violating any applicable laws or regulations</li>
+            <li>Infringing upon the rights of others</li>
+            <li>Uploading harmful or malicious content</li>
+            <li>Impersonating any person or entity</li>
+        </ul>
 
-    <h2>11. Governing Law</h2>
-    <p>These Terms shall be governed by the laws of the U.S., without regard to its conflict of law provisions.</p>
+        <h2 id="intellectual-property">6. Intellectual Property Rights</h2>
+        <p>All content and materials on the Service are the property of MBTI Oracle and are protected by intellectual property laws.</p>
 
-    <h2>12. Dispute Resolution</h2>
-    <p>Any disputes arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the U.S. Arbitration Association.</p>
+        <h2 id="disclaimers">7. Disclaimers</h2>
+        <p>The Service is provided on an "AS IS" and "AS AVAILABLE" basis. We disclaim all warranties, express or implied.</p>
 
-    <h2>13. Changes to Terms</h2>
-    <p>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the new Terms.</p>
+        <h2 id="limitation">8. Limitation of Liability</h2>
+        <p>In no event shall MBTI Oracle be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.</p>
 
-    <h2>14. Contact Us</h2>
-    <p>If you have any questions about these Terms, please contact us:</p>
-    <ul>
-        <li>Email: <a href="mailto:assistant.count@aiflowmail.com">assistant.count@aiflowmail.com</a></li>
-        <li>Address: 201 Old Main, University Park, PA 16802</li>
-    </ul>
+        <h2 id="indemnification">9. Indemnification</h2>
+        <p>You agree to indemnify and hold harmless MBTI Oracle from any claims arising out of your violation of these Terms.</p>
+
+        <h2 id="modifications">10. Modifications to Service</h2>
+        <p>We reserve the right to modify or discontinue the Service at any time without notice.</p>
+
+        <h2 id="governing-law">11. Governing Law</h2>
+        <p>These Terms shall be governed by the laws of the United States, without regard to its conflict of law provisions.</p>
+
+        <h2 id="dispute">12. Dispute Resolution</h2>
+        <p>Any disputes arising from these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.</p>
+
+        <h2 id="changes">13. Changes to Terms</h2>
+        <p>We may update these Terms from time to time. Continued use of the Service after changes constitutes acceptance of the new Terms.</p>
+
+        <h2 id="contact">14. Contact Us</h2>
+        <p>If you have any questions about these Terms, please contact us:</p>
+        <ul>
+            <li>Email: assistant.count@aiflowmail.com</a></li>
+            <li>Address: 201 Old Main, University Park, PA 16802</li>
+        </ul>
+    </div>
 </div>
 {% endblock %}

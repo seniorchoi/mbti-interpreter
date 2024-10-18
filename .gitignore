@@ -5,3 +5,9 @@ venv/
 __pycache__/
 *.pyc
 .env
+
+# System files
+.DS_Store
+
+# Flask session data
+flask_session/

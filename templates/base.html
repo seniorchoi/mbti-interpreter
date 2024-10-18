@@ -97,17 +97,16 @@
 </head>
 <body>
     {% block navbar %}
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="{{ url_for('index') }}">🔮 MBTI Oracle</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item{% if request.endpoint == 'vision' %} active{% endif %}">
-                    <a class="nav-link" href="{{ url_for('vision') }}">Image Guesser</a>
-                </li>
+        <!-- Keep the navbar-nav here for desktop view -->
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto d-none d-lg-flex">
+                <!-- Desktop nav items -->
                 <li class="nav-item{% if request.endpoint == 'index' %} active{% endif %}">
                     <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
                 </li>
@@ -118,24 +117,27 @@
                     <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfile" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Premium
+                    <a class="nav-link dropdown-toggle" href="#" id="desktopPremiumDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <strong>Premium</strong>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="desktopPremiumDropdown">
                         {% if not user.is_premium %}
                             <a class="dropdown-item" href="{{ url_for('upgrade') }}">Get Premium</a>
                             <div class="dropdown-divider"></div>
                         {% endif %}
-                            <a class="dropdown-item" href="{{ url_for('adaptive_test') }}">MBTI Psychologist</a>
-                            <a class="dropdown-item" href="{{ url_for('combined_report') }}">Combined Report</a>
+                        <a class="dropdown-item" href="{{ url_for('adaptive_test') }}">MBTI Psychologist</a>
+                        <a class="dropdown-item" href="{{ url_for('combined_report') }}">Combined Report</a>
+                        <a class="dropdown-item" href="{{ url_for('guesser') }}">Image Guesser</a>
                     </div>
                 </li>
+                <!-- Other desktop nav items -->
+                <!-- User Menu (Desktop) -->
                 {% if session.get('profile') %}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownProfile" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" id="desktopProfileDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         Menu
                     </a>
-                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownProfile">
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="desktopProfileDropdown">
                         {% if not user.is_premium %}
                             <a class="dropdown-item" href="{{ url_for('purchase_insights') }}">Insights: {{ user.insights }}</a>
                             <div class="dropdown-divider"></div>
@@ -145,13 +147,69 @@
                     </div>
                 </li>
                 {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                </li>
                 {% endif %}
             </ul>
         </div>
     </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-content">
+            <!-- Mobile nav items -->
+            <ul class="navbar-nav">
+                <li class="nav-item{% if request.endpoint == 'index' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('index') }}">Interpreter</a>
+                </li>
+                <li class="nav-item{% if request.endpoint == 'translator' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('translator') }}">Translator</a>
+                </li>
+                <li class="nav-item{% if request.endpoint == 'guesser' %} active{% endif %}">
+                    <a class="nav-link" href="{{ url_for('guesser') }}">Guesser</a>
+                </li>
+                <!-- Premium Dropdown -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#" id="premiumDropdown" role="button">
+                        <strong>Premium</strong>
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="premiumDropdown">
+                        {% if not user.is_premium %}
+                            <a class="dropdown-item" href="{{ url_for('upgrade') }}">Get Premium</a>
+                            <div class="dropdown-divider"></div>
+                        {% endif %}
+                        <a class="dropdown-item" href="{{ url_for('adaptive_test') }}">MBTI Psychologist</a>
+                        <a class="dropdown-item" href="{{ url_for('combined_report') }}">Combined Report</a>
+                        <a class="dropdown-item" href="{{ url_for('guesser') }}">Image Guesser</a>
+                    </div>
+                </li>
+                <!-- User Menu -->
+                {% if session.get('profile') %}
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button">
+                        Menu
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="profileDropdown">
+                        {% if not user.is_premium %}
+                            <a class="dropdown-item" href="{{ url_for('purchase_insights') }}">Insights: {{ user.insights }}</a>
+                            <div class="dropdown-divider"></div>
+                        {% endif %}
+                        <a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a>
+                        <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
+                    </div>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Backdrop -->
+    <div class="mobile-menu-backdrop" id="mobileMenuBackdrop"></div>
     {% endblock %}
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -182,27 +240,64 @@
 
     <!-- Announcement! -->
     <div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <!-- Modal Header -->
-            <div class="modal-header">
-              <h5 class="modal-title" id="announcementModalLabel">Announcement!</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header text-white" style="background: linear-gradient(90deg, #3c9cdf 0%, #79b1da 100%);">
+                    <h5 class="modal-title mx-auto d-flex align-items-center" id="announcementModalLabel">
+                        
+                        <span>Unlock Premium Features</span>
+                    </h5>
+                    <button type="button" class="close text-white position-absolute" style="right: 15px;" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <!-- Modal Body -->
+                <div class="modal-body p-3">
+                    <!-- Benefits Section -->
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!-- Benefit 1 -->
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card border-0 h-100">
+                                    <div class="card-body text-center p-2">
+                                        <img src="{{ url_for('static', filename='mbti_psychologist.png') }}" alt="MBTI Psychologist" class="mb-2" style="height: 80px;">
+                                        <h6 class="card-title font-weight-bold">MBTI Psychologist</h6>
+                                        <p class="card-text small">Uncover deep insights about your personality through interactive sessions tailored just for you.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Benefit 2 -->
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card border-0 h-100">
+                                    <div class="card-body text-center p-2">
+                                        <img src="{{ url_for('static', filename='combined_report.png') }}" alt="Combined Report" class="mb-2" style="height: 80px;">
+                                        <h6 class="card-title font-weight-bold">Combined Report</h6>
+                                        <p class="card-text small">Comprehensive analyses combined into one holistic report for deeper insights.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Benefit 3 -->
+                            <div class="col-12 col-md-4 mb-3">
+                                <div class="card border-0 h-100">
+                                    <div class="card-body text-center p-2">
+                                        <img src="{{ url_for('static', filename='unlock.svg') }}" alt="Unlimited Insights" class="mb-2" style="height: 80px;">
+                                        <h6 class="card-title font-weight-bold">Unlimited Insights</h6>
+                                        <p class="card-text small">Unlimited access to all premium features, including the Image Guesser.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Call-to-Action Button -->
+                    <div class="text-center mt-2">
+                        <a href="{{ url_for('upgrade') }}" class="btn btn-primary btn-lg btn-block">Upgrade Now</a>
+                    </div>
+                </div>
             </div>
-            <!-- Modal Body -->
-            <div class="modal-body">
-              <p>Share a screenshot of your results and share on IG tagging @MbtiOracle.</p>
-              <p>You will get <strong>50 Free insights!</strong></p>
-            </div>
-            <!-- Modal Footer (Optional) -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-primary" data-dismiss="modal">Got it!</button>
-            </div>
-          </div>
         </div>
-      </div>
+    </div>
+    
     <!-- Include JavaScript files -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 
@@ -221,23 +316,60 @@
         });
         
     </script>
+    <script>
+        $(document).ready(function() {
+            // Open the mobile menu
+            $('.navbar-toggler').on('click', function() {
+                $('#mobileMenu').addClass('show');
+                $('#mobileMenuBackdrop').addClass('show');
+            });
+
+            // Close the mobile menu when clicking the backdrop
+            $('#mobileMenuBackdrop').on('click', function() {
+                $('#mobileMenu').removeClass('show');
+                $(this).removeClass('show');
+            });
+
+            // Toggle dropdown menus in the mobile menu
+            $('#mobileMenu .dropdown-toggle').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent event bubbling
+
+                // Close any other open dropdown menus
+                $('#mobileMenu .dropdown-menu.show').not($(this).siblings('.dropdown-menu')).removeClass('show');
+
+                // Toggle the clicked dropdown menu
+                $(this).siblings('.dropdown-menu').toggleClass('show');
+            });
+
+            // Close the mobile menu when clicking a link that is not a dropdown toggle
+            $('#mobileMenu .nav-link').on('click', function(e) {
+                if (!$(this).hasClass('dropdown-toggle')) {
+                    $('#mobileMenu').removeClass('show');
+                    $('#mobileMenuBackdrop').removeClass('show');
+                }
+            });
+        });
+    </script>
 
     <!-- Place this script after including jQuery and Bootstrap JS in your base.html -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Use a unique key for the announcement
-        const announcementKey = 'announce_1'; // Increment the version
-        // Check if the user has already seen the popup
-        if (!localStorage.getItem(announcementKey)) {
-        // Show the modal
-        $('#announcementModal').modal('show');
-
-        // Set the flag in localStorage when the modal is closed
-        $('#announcementModal').on('hidden.bs.modal', function () {
-            localStorage.setItem(announcementKey, 'true');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Use a unique key for the announcement
+            const announcementKey = 'announce_14'; // Increment the version if needed
+    
+            // Get the current URL path
+            var path = window.location.pathname;
+    
+            // Check if the user has already seen the popup and we're not on the upgrade page
+            if (!localStorage.getItem(announcementKey) && !path.includes('/upgrade')) {
+                // Show the modal
+                $('#announcementModal').modal('show');
+    
+                // Set the flag in localStorage immediately
+                localStorage.setItem(announcementKey, 'true');
+            }
         });
-        }
-    });
     </script>
     {% block scripts %}{% endblock %}
 </body>
