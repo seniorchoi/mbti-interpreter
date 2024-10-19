@@ -226,6 +226,7 @@ def index():
                 f"If so, explain how this message reflects the traits of an {mbti_type}. "
                 f"And then interpret the message, which part of the message reflects traits of {mbti_type} and why."
                 f"If it does not reflect the traits of {mbti_type}, say which mbti traits the message reflects, and why. "
+                f"Respond in the same language as the message. "
                 f"Be confident and assertive in your tone."
             )
             messages=[
@@ -500,6 +501,7 @@ def guesser():
                 f"Explain your reasoning for each type.\n\n"
                 f"Message: \"{message}\"\n\n"
                 f"Be very confident and assertive in your predictions."
+                f"Respond in the same language as the message. "
                 f"Format your response exactly as:\n"
                 f"1. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
                 f"2. [MBTI Type] - [Probability]%\nReasoning: [Your reasoning here]\n"
@@ -507,7 +509,7 @@ def guesser():
             )
 
             messages=[
-                {"role": "system", "content": "You are an mbti expert."},
+                {"role": "system", "content": "You are an MBTI expert who can understand and communicate in any language."},
                 {
                     "role": "user",
                     "content": prompt
