@@ -25,10 +25,10 @@
                 >{{ message }}</textarea>
             </div>
             <div class="text-center">
-                <span>🌎 Enter Any Language!</span>
+                <button type="submit" class="btn btn-primary">Guess MBTI Type</button>
             </div>
             <div class="text-center">
-                <button type="submit" class="btn btn-primary">Guess MBTI Type</button>
+                <span id="initial-message">🌎 Enter Any Language!</span>
             </div>
             <div class="text-center">
                 <span id="loading-message" class="loading-message ml-2" style="display: none;">
@@ -59,9 +59,17 @@
     <script>
         const form = document.getElementById('guesser-form');
         const loadingMessage = document.getElementById('loading-message');
+        const initialMessage = document.getElementById('initial-message');
 
         form.addEventListener('submit', function() {
+            // Hide the initial message
+            initialMessage.style.display = 'none';
             loadingMessage.style.display = 'inline-block';
+            // Optional: Disable the submit button to prevent multiple submissions
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
             mixpanel.track("Guesser Submit", {
             "User ID": userId || "Anonymous",
             "Premium": isPremium

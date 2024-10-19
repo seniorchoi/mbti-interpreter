@@ -89,6 +89,14 @@ label {
     background-color: #3b6fc9;
 }
 
+/* Override styles for disabled primary buttons */
+.btn-primary:disabled {
+    background-color: #3b6fc9; /* Set to your desired dark blue color */
+    border-color: #007bff; /* Ensure border matches */
+    color: #fff; /* Keep the text color white */
+    opacity: 1; /* Remove any opacity */
+}
+
 .interpretation {
     margin-top: 40px;
 }

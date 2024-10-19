@@ -90,6 +90,10 @@
         "$isPremium": isPremium
         // Add other properties if needed
         });
+    {% else %}
+        var userId = "Anonymous";
+        var isPremium = false;
+        mixpanel.identify(mixpanel.get_distinct_id());
     {% endif %}
     </script>
 
@@ -306,15 +310,45 @@
     <!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>-->
 
     <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", function() {
-            mixpanel.track("Page Viewed", {
-              "Page": "{{ request.page_title }}",
-              "URL": "{{ request.path }}",
-              "User ID": userId || "Anonymous",
-              "Premium": isPremium
-            });
+        // Start timing the event when the page loads
+        mixpanel.time_event("Page Viewed");
+    
+        // Variable to keep track of page visibility
+        var pageVisible = true;
+    
+        // Handle visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden') {
+                pageVisible = false;
+                // Track the event since the page is now hidden
+                mixpanel.track("Page Viewed", {
+                    "Page": "{{ request.endpoint }}",
+                    "URL": "{{ request.path }}",
+                    "User ID": userId,
+                    "Premium": isPremium
+                });
+                // Optionally, you can log or handle the hidden state here
+            } else if (document.visibilityState === 'visible') {
+                pageVisible = true;
+                // Start timing the event again
+                mixpanel.time_event("Page Viewed");
+                // Optionally, you can log or handle the visible state here
+            }
         });
-        
+    
+        // When the user leaves the page
+        window.addEventListener('beforeunload', function() {
+            // Check if the page is visible
+            if (pageVisible) {
+                // Track the event
+                mixpanel.track("Page Viewed", {
+                    "Page": "{{ request.endpoint }}",
+                    "URL": "{{ request.path }}",
+                    "User ID": userId,
+                    "Premium": isPremium
+                });
+            }
+        });
     </script>
     <script>
         $(document).ready(function() {
@@ -352,7 +386,7 @@
         });
     </script>
 
-    <!-- Place this script after including jQuery and Bootstrap JS in your base.html -->
+    <!-- Place this script after including jQuery and Bootstrap JS in your base.html 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Use a unique key for the announcement
@@ -370,7 +404,7 @@
                 localStorage.setItem(announcementKey, 'true');
             }
         });
-    </script>
+    </script>-->
     {% block scripts %}{% endblock %}
 </body>
 </html>
